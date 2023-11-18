@@ -1,0 +1,242 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.pot
+*.pyc
+
+# Django
+*.env
+*.pyc
+*.pyo
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+*.pyc
+*.pyo
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# npm
+*.log
+*.lock
+*.sqlite
+*.sqlite3
+*.env
+
+# Virtual Environment
+venv/
+env/
+
+# IDE (e.g., PyCharm)
+.idea/
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Compiled Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Translations
+*.mo
+
+# Credentials
+*.key
+*.pem
+
+# dotenv
+.env
+
+# pyenv
+.python-version
+
+# virtualenv
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# SageMath
+.sageMath
+.sageMathData
+
+# Django Tailwind CSS
+tailwind.config.js
+static/styles/
+static/.postcss-cache/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.pot
+*.pyc
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# npm
+*.log
+*.lock
+*.sqlite
+*.sqlite3
+*.env
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Compiled Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Translations
+*.mo
+
+# Credentials
+*.key
+*.pem
+
+# dotenv
+.env
+
+# pyenv
+.python-version
+
+# virtualenv
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# SageMath
+.sageMath
+.sageMathData
+
+# Django Tailwind CSS
+tailwind.config.js
+static/styles/
+static/.postcss-cache/
