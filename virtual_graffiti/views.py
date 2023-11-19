@@ -20,7 +20,7 @@ def errors(request):
 def settings(request, user_identifier):
     try:
         user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
-        first_name, laser_pointer = user_identifier_decoded.split('_')
+        first_name, last_name, laser_pointer = user_identifier_decoded.split('_')
     except:
         return errors(request)
         
@@ -29,6 +29,7 @@ def settings(request, user_identifier):
         'from_gradient': '#74EE15',
         'to_gradient': '#F000FF',
         'first_name': first_name,
+        'last_name': last_name,
         'laser_pointer': laser_pointer,
     }
 
@@ -37,9 +38,10 @@ def settings(request, user_identifier):
 def signup(request):
     if request.method == 'POST':
         first_name = request.POST.get('firstname')
+        last_name = request.POST.get('lastname')
         laser_pointer = request.POST.get('laser')
 
-        base64_user_identifier = base64.b64encode(f"{first_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
+        base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
         redirect_url = f"http://{HOST}/settings/{base64_user_identifier}"
        
         qr = qrcode.QRCode(

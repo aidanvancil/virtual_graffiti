@@ -3,9 +3,49 @@
 {% block title %}User Settings{% endblock %}
 
 {% block content %}
-<div>
-    <h1>User Settings</h1>
-    <p>First Name: {{ first_name }}</p>
-    <p>Laser Pointer: {{ laser_pointer }}</p>
+<div class="flex items-center justify-center h-screen mt-[-5vh]">
+    <div class="p-5 px-5 w-11/12 md:w-1/2 lg:w-1/3 sm:h-3/5 h-auto bg-[#181818] rounded-lg flex flex-col items-center text-white font-bold">
+            <h1 class="text-center underline text-3xl md:text-5xl">Settings</h1>
+            <div>
+                <div class="mb-8 mt-8 flex space-x-4 justify-center max-w-xs text-center">
+                    <p for="first_name">Hello, <span class="text-gray-500 font-bold"> {{ first_name }} {{ last_name }}!</span> Configure your laser pointer to your desired settings (font, size, style, and more).</p>
+                </div>
+                
+                <div class="mb-8 flex space-x-4 justify-center">
+                    <label for="laser" class="text-white">
+                        Your Laser's Color:
+                        <span class="{% if laser_pointer == 'Red' %}text-red-500{% elif laser_pointer == 'Green' %}text-green-500{% elif laser_pointer == 'Purple' %}text-purple-500{% endif %}">
+                            {{ laser_pointer }}
+                        </span>
+                    </label>
+                </div>
+
+                <div>
+                    <!-- Drawing Color Dropdown -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label for="drawing_color">Drawing <span class="underline">Color</span>:</label>
+                        <input type="color" id="drawing_color" name="drawing_color" value="{% if laser_pointer == 'Green' %}#00ff00{% elif laser_pointer == 'Purple' %}#800080{% elif laser_pointer == 'Red' %}#ff0000{% endif %}" class="ml-2" />
+                    </div>
+                    
+                    
+
+                    <!-- Drawing Size Input -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label for="drawing_size">Drawing <span class="underline">Size</span>:</label>
+                        <input class="w-20 h-10 text-black font-bold" type="number" id="drawing_size" name="drawing_size" min="1" max="200" value="{{ default_size }}" class="ml-2" /> px
+                    </div>
+
+                    <!-- Drawing Style Dropdown -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label for="drawing_style">Drawing <span class="underline">Style</span>:</label>
+                        <select id="drawing_style" name="drawing_style" class="ml-2 text-black font-bold text-sm h-10">
+                            <option value="fountain" {% if selected_style == 'fountain' %}selected{% endif %}>Fountain</option>
+                            <option value="pencil" {% if selected_style == 'pencil' %}selected{% endif %}>Pencil</option>
+                            <!-- Add more options as needed -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+    </div>
 </div>
 {% endblock %}
