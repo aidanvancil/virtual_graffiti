@@ -86,7 +86,12 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:    
             log(request, user)
-            return redirect('admin_panel')
+            context = {
+                'gradient': True,
+                'from_gradient': '#FFE700',
+                'to_gradient': '#4DEEEA',
+            } 
+            return render(request, 'admin_panel.html', context)
         else:
             error_message = "Username or password is incorrect."
             context = {
