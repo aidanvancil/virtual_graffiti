@@ -2,14 +2,14 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-    <title>Django Tailwind</title>
+    <title>Virtual Graffiti</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		{% tailwind_css %}
 	</head>
 
-	<body class="overflow-hidden {% if gradient %} bg-gradient-to-b from-[{{ from_gradient }}] to-[{{ to_gradient }}] {% endif %}">
+	<body class="overflow-hidden {% if gradient %} bg-gradient-to-b from-[{{from_gradient}}] to-[{{to_gradient}}] {% endif %}">
 		<header>
 			<button class="mx-4 mt-4 py-4 px-8 bg-black text-white font-bold text-3xl rounded-full">V/G</button>
 		</header>

@@ -54,6 +54,9 @@ def signup(request):
 
         context = {
             'qr_code_base64': qr_code_base64,
+            'gradient': True,
+            'from_gradient': '#74EE15',
+            'to_gradient': '#F000FF',
         }
 
         return render(request, 'signup.html', context)
