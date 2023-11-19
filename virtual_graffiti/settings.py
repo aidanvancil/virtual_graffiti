@@ -25,8 +25,9 @@ SECRET_KEY = 'django-insecure-sn73sgam#p1p^-!#i4&i%nhmdjg2&!)2qs7u70^@1t6n#e0=k6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # '27fc-47-33-18-76.ngrok-free.app', 
+#CSRF_TRUSTED_ORIGINS = ['https://27fc-47-33-18-76.ngrok-free.app/']
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 TAILWIND_APP_NAME = 'app'
 
 # Application definition

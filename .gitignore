@@ -239,4 +239,6 @@ env/
 # Django Tailwind CSS
 tailwind.config.js
 static/styles/
+static/node_modules/
+
 static/.postcss-cache/

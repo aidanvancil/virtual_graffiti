@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center h-screen">
+    {% if qr_code_base64 %}
+        <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+    {% else %}
+        <form method="post" action="">
+            {% csrf_token %}
+            <label for="firstname">First Name:</label>
+            <input type="text" name="firstname" required>
+
+            <label for="laser">Laser:</label>
+            <select name="laser" required>
+                <option value="laser1">Laser 1</option>
+                <option value="laser2">Laser 2</option>
+                <option value="laser3">Laser 3</option>
+                <option value="laser4">Laser 4</option>
+            </select>
+
+            <button type="submit">Submit</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}
