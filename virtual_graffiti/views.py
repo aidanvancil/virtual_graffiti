@@ -9,13 +9,21 @@ HOST = "localhost:8000"
 
 
 def errors(request):
-    context = {'error': 404}
+    context = {
+        'gradient': True,
+        'from_gradient': '#74EE15',
+        'to_gradient': '#F000FF',
+        'error': 404
+    }
     return render(request, 'errors.html', context)
 
 def settings(request, user_identifier):
-    user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
-    first_name, laser_pointer = user_identifier_decoded.split('_')
-
+    try:
+        user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
+        first_name, laser_pointer = user_identifier_decoded.split('_')
+    except:
+        return errors(request)
+        
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',
