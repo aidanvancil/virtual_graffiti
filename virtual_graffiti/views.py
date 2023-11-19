@@ -17,6 +17,9 @@ def settings(request, user_identifier):
     first_name, laser_pointer = user_identifier_decoded.split('_')
 
     context = {
+        'gradient': True,
+        'from_gradient': '#74EE15',
+        'to_gradient': '#F000FF',
         'first_name': first_name,
         'laser_pointer': laser_pointer,
     }
@@ -55,7 +58,11 @@ def signup(request):
 
         return render(request, 'signup.html', context)
 
-    context = {}
+    context = {
+        'gradient': True,
+        'from_gradient': '#74EE15',
+        'to_gradient': '#F000FF',
+    }
     return render(request, 'signup.html', context)
 
 
@@ -69,9 +76,20 @@ def login(request):
             return redirect('admin_panel')
         else:
             error_message = "Username or password is incorrect."
-            context = {'error_message': error_message}
+            context = {
+                'error_message': error_message,
+                'gradient': True,
+                'from_gradient': '#74EE15',
+                'to_gradient': '#F000FF',
+            }
             return render(request, 'login.html', context)
-    return render(request, 'login.html')
+        
+    context = {
+        'gradient': True,
+        'from_gradient': '#74EE15',
+        'to_gradient': '#F000FF'
+    }
+    return render(request, 'login.html', context)
 
 @login_required(login_url='login')
 def logout(request):
