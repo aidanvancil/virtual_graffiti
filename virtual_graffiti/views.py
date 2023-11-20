@@ -7,7 +7,6 @@ from io import BytesIO
 
 HOST = "localhost:8000"
 
-
 def errors(request):
     context = {
         'gradient': True,
@@ -35,6 +34,7 @@ def settings(request, user_identifier):
 
     return render(request, 'settings.html', context)
 
+@login_required(login_url='login')
 def signup(request):
     if request.method == 'POST':
         first_name = request.POST.get('firstname')
@@ -86,12 +86,7 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:    
             log(request, user)
-            context = {
-                'gradient': True,
-                'from_gradient': '#FFE700',
-                'to_gradient': '#4DEEEA',
-            } 
-            return render(request, 'admin_panel.html', context)
+            return redirect('admin_panel')
         else:
             error_message = "Username or password is incorrect."
             context = {
@@ -112,10 +107,15 @@ def login(request):
 @login_required(login_url='login')
 def logout(request):
     auth_logout(request)
+    print("LOGGED OUT")
     return redirect('login')
 
 @login_required(login_url='login')
 def admin_panel(request):
-    context = {}
-    return render(request, 'homepage.html', context)
+    context = {
+        'gradient': True,
+        'from_gradient': '#FFE700',
+        'to_gradient': '#4DEEEA',
+    } 
+    return render(request, 'admin_panel.html', context)
 

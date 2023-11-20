@@ -21,10 +21,10 @@ from . import views
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path('admin/', admin.site.urls),
-    path('admin_panel', views.admin_panel, name='admin_panel'),
-    path('', views.signup, name='signup'),
-    path('login/', views.login, name='login'),
-    path('logout/', views.login, name='logout'),
+    path('admin_panel/', views.admin_panel, name='admin_panel'),
+    path('', views.login, name='login'),
+    path('register/', views.signup, name='signup'),
+    path('logout/', views.logout, name='logout'),
     path('settings/<str:user_identifier>/', views.settings, name='settings'),
     re_path(r'^.*/$', views.errors, name='errors'),
 ]

@@ -1,0 +1,32 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Virtual Graffiti</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    {% tailwind_css %}
+</head>
+
+<body 
+    class="overflow-hidden"
+    style="{% if gradient %}background: linear-gradient(to bottom, {{from_gradient}}, {{to_gradient}}); {% endif %}"
+>
+
+<nav class="bg-[#434343] text-white p-4 flex items-center justify-between">
+    <button class="mx-4 py-3 px-7 bg-black text-white font-bold text-3xl rounded-full"><a href="/">V/G</a></button>
+    
+    <div class="flex items-center space-x-4 text-3xl font-bold">
+        <button class="py-3 px-7 bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/register">Register User</a></button>
+        <button class="py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
+        <button class="py-3 px-7 bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/logout">Log Out</a></button>
+    </div>
+</nav>
+
+<main class="">
+    {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>
