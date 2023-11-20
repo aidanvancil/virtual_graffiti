@@ -16,7 +16,7 @@
             {% else %}
                 <form class="h-full w-full flex flex-col justify-between items-center" method="post" action="">
                     {% csrf_token %}
-                    <div>
+                    <div class="md:mt-10 lg:space-y-16 md:space-y-14 space-y-10">
                         <div class="mb-8 mt-8 flex space-x-4 justify-center">
                             <label for="firstname">First Name:</label>
                             <input class="w-11/12 md:w-1/2 rounded-md p-2 text-black" type="text" name="firstname" class="border rounded-md p-2" required>
@@ -27,7 +27,7 @@
                             <input class="w-11/12 md:w-1/2 rounded-md p-2 text-black" type="text" name="lastname" class="border rounded-md p-2" required>
                         </div>
 
-                        <div class="mb-8 sm:ml-7 ml-6 flex space-x-4 justify-center">
+                        <div class="mb-8 sm:ml-7 ml-6 flex space-x-4 justify-center md:">
                             <label for="laser">Laser:</label>
                             <select class="w-11/12 md:w-1/2 rounded-md p-2 text-black" name="laser" required>
                                 <option value="Red">Red</option>
@@ -37,8 +37,12 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <button class="bg-black px-8 py-4 rounded-full transform transition-transform hover:scale-105" type="submit">Submit</button>
+                    <div class="flex space-x-4">
+                        <button class="px-8 h-14 bg-[#181818] rounded-full transform transition-transform hover:scale-105"><a href="/admin_panel" class="">Back to Admin Panel</a></button>
+
+                        <div class="mb-3">
+                            <button class="bg-black px-8 h-14 rounded-full transform transition-transform hover:scale-105" type="submit">Submit</button>
+                        </div>
                     </div>
                 </form>
             {% endif %}
