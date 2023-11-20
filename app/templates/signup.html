@@ -9,10 +9,16 @@
             <h1 class="text-center underline text-3xl md:text-5xl">Registration</h1>
 
             {% if qr_code_base64 %}
-                <p class="mt-8 max-w-sm text-center">Thanks for registering, scan the QR to customize you soon-to-be given laser! </p>
-                <div class="items-center justify-center flex w-full h-full">
-                    <img class="scale-50 md:scale-[.6] lg:scale-[.75] xl:scale-100 rounded-xl" src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+            <p class="md:mt-8 max-w-sm text-center sm:mt-2 m-2">Thanks for registering, scan the QR to customize your soon-to-be-given laser!</p>
+            <div class="flex flex-col items-center justify-center w-full">
+                <div class="w-2/3 flex items-center justify-center">
+                    <img class="w-full max-w-[300px] md:scale-[0.6] lg:scale-[0.75] xl:scale-100 rounded-xl" src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
                 </div>
+                <button class="mt-4 sm:px-8 sm:h-14 px-4 h-7 md:m-4 text-xs sm:text-sm md:text-base lg:text-lg bg-[#181818] rounded-full transform transition-transform hover:scale-105">
+                    <a href="/admin_panel" class="">Back to Admin Panel</a>
+                </button>
+            </div>
+            
             {% else %}
                 <form class="h-full w-full flex flex-col justify-between items-center" method="post" action="">
                     {% csrf_token %}

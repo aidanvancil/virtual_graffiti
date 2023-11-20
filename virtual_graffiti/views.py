@@ -80,6 +80,10 @@ def signup(request):
 
 
 def login(request):
+    if request.user.is_authenticated:
+        # Redirect to admin_panel if the user is already authenticated
+        return redirect('admin_panel')
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -96,7 +100,8 @@ def login(request):
                 'to_gradient': '#F000FF',
             }
             return render(request, 'login.html', context)
-        
+    
+    
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',
