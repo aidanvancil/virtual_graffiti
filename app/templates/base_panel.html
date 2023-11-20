@@ -19,10 +19,71 @@
     
     <div class="flex items-center space-x-4  font-bold">
         <button class="hidden sm:block bg-[#181818] py-3 px-7  md:bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/register">Register User</a></button>
-        <button class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
+        <button id="openSidebarBtn" class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
         <button class="py-3 px-7 bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/logout">Log Out</a></button>
     </div>
 </nav>
+
+<div id="sidebar" class="fixed top-0 right-0 h-1/5 bg-[#181818] p-4 transition-transform ease-in-out duration-300 rounded-lg hidden border border-gray-500 lg:border-none md:block md:w-4/5 md:h-1/4 lg:w-2/5 xl:w-[22.5%] lg:h-1/2"
+    style="transform: translateX(100%);">    <button id="closeSidebarBtn" class="font-bold text-4xl text-white">></button>
+    <div class="font-bold text-4xl text-white underline text-center">Settings</div>
+
+    <div class="text-white text-center flex lg:flex-col justify-end my-auto items-center mt-10 space-x-5 lg:space-y-10">
+        
+        <!-- Laser dropdown -->
+        <div class="md:flex hidden items-center lg:mb-4 w-full">
+            <span class="font-bold mr-2">Laser:</span>
+            <select class="bg-[#434343] text-white p-2 rounded">
+                <option value="green">Green</option>
+                <option value="purple">Purple</option>
+                <option value="red">Red</option>
+            </select>
+        </div>
+
+        <!-- Color window -->
+        <div class="md:flex hidden items-center lg:mb-4 w-full">
+            <span class="font-bold mr-2">Color:</span>
+            <input type="color" class="rounded">
+        </div>
+
+        <!-- Size input -->
+        <div class="lg:flex hidden items-center lg:mb-4 w-full">
+            <span class="font-bold mr-2">Size:</span>
+            <input type="number" class="bg-[#434343] text-white p-2 rounded" min="1" max="200">
+            <span>px</span>
+        </div>
+
+        <!-- Style input -->
+        <div class="md:flex hidden items-center w-full">
+            <span class="font-bold mr-2">Style:</span>
+            <select class="bg-[#434343] text-white p-2 rounded">
+                <option value="fountain">Fountain</option>
+                <option value="pencil">Pencil</option>
+                <option value="spray">Spray</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        if (sidebar.style.transform === 'translateX(0%)') {
+            sidebar.style.transform = 'translateX(100%)';
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+        } else {
+            sidebar.style.transform = 'translateX(0%)';
+            overlay.style.opacity = '0.5';
+            overlay.style.pointerEvents = 'auto';
+        }
+    }
+    document.getElementById('openSidebarBtn').addEventListener('click', toggleSidebar);
+    document.getElementById('closeSidebarBtn').addEventListener('click', toggleSidebar);
+</script>
 
 <main class="">
     {% block content %}{% endblock %}
