@@ -1,15 +1,33 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
 from app.models import UserProfile, Laser
 import cv2
 import qrcode
 import base64
 from io import BytesIO
+import json
 
 HOST = "localhost:8000"
+
+
+def get_laser(request, laser_id):
+    if request.method == 'GET':
+        try:
+            laser = Laser.objects.get(id=laser_id)
+        except Laser.DoesNotExist:
+            return errors(request)
+
+        print(laser)
+        return JsonResponse({
+            'color': laser.color,
+            'size': laser.size,
+            'style': laser.style
+        })
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 @gzip.gzip_page
 def video_feed(request):
@@ -37,6 +55,27 @@ def video_feed(request):
     response = StreamingHttpResponse(generate(), content_type="multipart/x-mixed-replace;boundary=frame")
     return response
 
+def set_laser_color(request, laser_id):
+    data = json.loads(request.body)
+    laser = Laser.objects.get(id=laser_id)
+    laser.color = data['data']
+    laser.save()
+    return JsonResponse({'success': True}, status=200)
+
+def set_laser_size(request, laser_id):
+    data = json.loads(request.body)
+    laser = Laser.objects.get(id=laser_id)
+    laser.size = data['data']
+    laser.save()
+    return JsonResponse({'success': True}, status=200)
+
+def set_laser_style(request, laser_id):
+    data = json.loads(request.body)
+    laser = Laser.objects.get(id=laser_id)
+    laser.style = data['data']
+    laser.save()
+    return JsonResponse({'success': True}, status=200)
+    
 def errors(request):
     context = {
         'gradient': True,

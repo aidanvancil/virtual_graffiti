@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {% tailwind_css %}
 </head>
 
@@ -36,7 +37,8 @@
         <!-- Laser dropdown -->
         <div class="md:flex hidden items-center lg:mb-4 w-full">
             <span class="font-bold mr-2">Laser:</span>
-            <select id="laserDropdown" class="bg-[#434343] text-white p-2 rounded">
+            <select id="laserDropdown" class="bg-[#434343] text-white p-2 rounded" onchange="getLaser(this.value)">
+                <option value="" selected disabled></option>
                 {% for user in users %}
                     <option value="{{ user.laser.id }}">{{ user.laser.id }}</option>
                 {% endfor %}
@@ -44,22 +46,22 @@
         </div>
 
         <!-- Color window -->
-        <div class="md:flex hidden items-center lg:mb-4 w-full">
+        <div class="md:flex hidden items-center lg:mb-4 w-full" onchange="setLaser('color')">
             <span class="font-bold mr-2">Color:</span>
-            <input type="color" id="colorInput" class="rounded">
+            <input type="color" id="colorInput" class="rounded" disabled>
         </div>
 
         <!-- Size input -->
-        <div class="lg:flex hidden items-center lg:mb-4 w-full">
+        <div class="lg:flex hidden items-center lg:mb-4 w-full" onchange="setLaser('size')">
             <span class="font-bold mr-2">Size:</span>
-            <input type="number" id="sizeInput" class="bg-[#434343] text-white p-2 rounded" min="1" max="200">
+            <input type="number" id="sizeInput" class="bg-[#434343] text-white p-2 rounded" min="1" max="200" disabled>
             <span>px</span>
         </div>
 
         <!-- Style input -->
         <div class="md:flex hidden items-center w-full">
             <span class="font-bold mr-2">Style:</span>
-            <select id="styleDropdown" class="bg-[#434343] text-white p-2 rounded">
+            <select id="styleDropdown" class="bg-[#434343] text-white p-2 rounded" disabled onchange="setLaser('style')">
                 <option value="fountain">Fountain</option>
                 <option value="pencil">Pencil</option>
                 <option value="spray">Spray</option>
@@ -69,11 +71,73 @@
 </div>
 {% endif %}
 
+<script>
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
+
+    function getLaser(id) {
+        const URL = 'http://localhost:8000/get_laser/' + id;
+        fetch(URL)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                document.getElementById('colorInput').value = data.color;
+                document.getElementById('sizeInput').value = data.size;
+                var styleDropdown = document.getElementById('styleDropdown');
+                for (var i = 0; i < styleDropdown.options.length; i++) {
+                    var option = styleDropdown.options[i];
+                    if (option.value === data.style) {
+                        option.selected = true;
+                    } else {
+                        option.selected = false;
+                    }
+                }
+                
+                document.getElementById('colorInput').removeAttribute('disabled');
+                document.getElementById('sizeInput').removeAttribute('disabled');
+                document.getElementById('styleDropdown').removeAttribute('disabled');
+            })
+            .catch(error => console.error('Error fetching laser details:', error));
+    }
+    
+    function setLaser(feature) {
+        const id = document.getElementById('laserDropdown').value;
+        const color_input = document.getElementById('colorInput').value;
+        const size_input = document.getElementById('sizeInput').value;
+        const style_input = document.getElementById('styleDropdown').value;
+        var data = null;
+
+        if (feature === 'color') {
+            data = color_input;
+        } else if (feature === 'size') {
+            data = size_input;
+        } else if (feature === 'style') {
+            data = style_input;
+        }
+        console.log(data)
+        const URL = 'http://localhost:8000/set_laser_' + feature + '/' + id + '/';
+        
+
+        fetch(URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify({ data }),
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error updating laser details:', error));
+    }
+</script>
 
 <script>
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
+        document.getElementById('laserDropdown').value = '';
 
         if (sidebar.style.transform === 'translateX(0%)') {
             sidebar.style.transform = 'translateX(100%)';

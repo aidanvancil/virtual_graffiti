@@ -2,7 +2,7 @@ from django.db import models
 
 class Laser(models.Model):
     id = models.CharField(max_length=10, primary_key=True)
-    color = models.CharField(max_length=30, default='RandomRGBHere')
+    color = models.CharField(max_length=30, default='#777777', null=True)
     size = models.IntegerField(default=10)
     style = models.CharField(max_length=30, default='Fountain')
 
