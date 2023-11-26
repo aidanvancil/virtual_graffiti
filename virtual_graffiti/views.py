@@ -1,11 +1,40 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
+from django.http import StreamingHttpResponse
+from django.views.decorators import gzip
+import cv2
 import qrcode
 import base64
 from io import BytesIO
 
 HOST = "localhost:8000"
+
+@gzip.gzip_page
+def video_feed(request):
+    # Open the camera (adjust the camera index as needed, e.g., 0 for the default camera)
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+
+    def generate():
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
+                frame_bytes = jpeg.tobytes()
+
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+        finally:
+            cap.release()
+
+    response = StreamingHttpResponse(generate(), content_type="multipart/x-mixed-replace;boundary=frame")
+    return response
 
 def errors(request):
     context = {
@@ -121,6 +150,7 @@ def admin_panel(request):
         'gradient': True,
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
+        'video_feed': True
     } 
     return render(request, 'admin_panel.html', context)
 

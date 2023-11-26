@@ -22,6 +22,7 @@ urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path('admin/', admin.site.urls),
     path('admin_panel/', views.admin_panel, name='admin_panel'),
+    path('video_feed/', views.video_feed, name='video_feed'),
     path('', views.login, name='login'),
     path('register/', views.signup, name='signup'),
     path('logout/', views.logout, name='logout'),
