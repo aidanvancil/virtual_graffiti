@@ -18,7 +18,7 @@
     <button class="mx-4 py-3 px-7 bg-black text-white font-bold text-3xl rounded-full"><a href="/">V/G</a></button>
     
     <div class="flex items-center space-x-4  font-bold">
-        <button class="hidden sm:block {% if users %} md:bg-[#636363] {% endif %} bg-[#181818] py-3 px-7   text-white rounded-full hover:text-gray-700"><a href="/register">Register User</a></button>
+        {% if range|length != 0 %} <button class="hidden sm:block {% if users %} md:bg-[#636363] {% endif %} bg-[#181818] py-3 px-7   text-white rounded-full hover:text-gray-700"><a href="/register">Register User </a></button> {% endif %}
         {% if users %}
             <button id="openSidebarBtn" class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
         {% endif %}
