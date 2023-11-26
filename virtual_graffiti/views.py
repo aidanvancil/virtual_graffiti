@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
 from django.http import StreamingHttpResponse
 from django.views.decorators import gzip
+from app.models import UserProfile, AvailableLaser
 import cv2
 import qrcode
 import base64
@@ -64,12 +65,23 @@ def settings(request, user_identifier):
     return render(request, 'settings.html', context)
 
 @login_required(login_url='login')
+def remove_user_and_release_laser(request, first_name, last_name):
+    user_to_del = get_object_or_404(UserProfile, first_name=first_name, last_name=last_name)
+    
+    if user_to_del:
+        AvailableLaser.laser_choices.append(user_to_del.laser)
+        user_to_del.delete()
+    return redirect(admin_panel)
+
+@login_required(login_url='login')
 def signup(request):
     if request.method == 'POST':
         first_name = request.POST.get('firstname')
         last_name = request.POST.get('lastname')
         laser_pointer = request.POST.get('laser')
-
+        
+        UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser_pointer)
+        AvailableLaser.laser_choices.remove(laser_pointer)
         base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
         redirect_url = f"http://{HOST}/settings/{base64_user_identifier}"
        
@@ -99,12 +111,14 @@ def signup(request):
         }
 
         return render(request, 'signup.html', context)
-
-    context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF',
-    }
+    else:  
+        context = {
+            'gradient': True,
+            'from_gradient': '#74EE15',
+            'to_gradient': '#F000FF',
+            'available_lasers': AvailableLaser.laser_choices
+        }
+        
     return render(request, 'signup.html', context)
 
 
@@ -117,7 +131,8 @@ def login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
-        if user is not None:    
+        if user is not None:
+            UserProfile.objects.all().delete()    
             log(request, user)
             return redirect('admin_panel')
         else:
@@ -141,7 +156,6 @@ def login(request):
 @login_required(login_url='login')
 def logout(request):
     auth_logout(request)
-    print("LOGGED OUT")
     return redirect('login')
 
 @login_required(login_url='login')
@@ -150,7 +164,9 @@ def admin_panel(request):
         'gradient': True,
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
-        'video_feed': True
+        'video_feed': True,
+        'users': UserProfile.objects.all(),
+        'range': [0] * (3 - UserProfile.objects.count())
     } 
     return render(request, 'admin_panel.html', context)
 

@@ -33,14 +33,16 @@
                             <input class="w-11/12 md:w-1/2 rounded-md p-2 text-black" type="text" name="lastname" class="border rounded-md p-2" required>
                         </div>
 
+                        {% if available_lasers %}
                         <div class="mb-8 sm:ml-7 ml-6 flex space-x-4 justify-center md:">
                             <label for="laser">Laser:</label>
                             <select class="w-11/12 md:w-1/2 rounded-md p-2 text-black" name="laser" required>
-                                <option value="Red">Red</option>
-                                <option value="Green">Green</option>
-                                <option value="Purple">Purple</option>
+                                {% for laser_color in available_lasers %}
+                                    <option value="{{ laser_color }}">{{ laser_color }}</option>
+                                {% endfor %}
                             </select>
                         </div>
+                        {% endif %}
                     </div>
 
                     <div class="flex space-x-4">

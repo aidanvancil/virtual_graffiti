@@ -27,5 +27,6 @@ urlpatterns = [
     path('register/', views.signup, name='signup'),
     path('logout/', views.logout, name='logout'),
     path('settings/<str:user_identifier>/', views.settings, name='settings'),
+    path('disconnect/<str:first_name>_<str:last_name>/', views.remove_user_and_release_laser, name='disconnect_user'),
     re_path(r'^.*/$', views.errors, name='errors'),
 ]
