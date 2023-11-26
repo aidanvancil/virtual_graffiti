@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
 from django.http import StreamingHttpResponse
 from django.views.decorators import gzip
-from app.models import UserProfile, AvailableLaser
+from app.models import UserProfile, Laser
 import cv2
 import qrcode
 import base64
@@ -52,14 +52,16 @@ def settings(request, user_identifier):
         first_name, last_name, laser_pointer = user_identifier_decoded.split('_')
     except:
         return errors(request)
-        
+    
+    laser_pointer = Laser.get(id=laser_pointer)
+    user = UserProfile.objects.filter(first_name=first_name, last_name=last_name, laser=laser_pointer)
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',
         'to_gradient': '#F000FF',
-        'first_name': first_name,
-        'last_name': last_name,
-        'laser_pointer': laser_pointer,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'laser_pointer': user.laser.id,
     }
 
     return render(request, 'settings.html', context)
@@ -69,7 +71,6 @@ def remove_user_and_release_laser(request, first_name, last_name):
     user_to_del = get_object_or_404(UserProfile, first_name=first_name, last_name=last_name)
     
     if user_to_del:
-        AvailableLaser.laser_choices.append(user_to_del.laser)
         user_to_del.delete()
     return redirect(admin_panel)
 
@@ -79,9 +80,9 @@ def signup(request):
         first_name = request.POST.get('firstname')
         last_name = request.POST.get('lastname')
         laser_pointer = request.POST.get('laser')
-        
-        UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser_pointer)
-        AvailableLaser.laser_choices.remove(laser_pointer)
+        laser = Laser.objects.get(id=laser_pointer)
+
+        UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
         base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
         redirect_url = f"http://{HOST}/settings/{base64_user_identifier}"
        
@@ -110,13 +111,15 @@ def signup(request):
             'to_gradient': '#F000FF',
         }
 
-        return render(request, 'signup.html', context)
+        return render(request, 'signup.html', context)\
+            
     else:  
+        lasers_without_users = Laser.objects.filter(userprofile__isnull=True)
         context = {
             'gradient': True,
             'from_gradient': '#74EE15',
             'to_gradient': '#F000FF',
-            'available_lasers': AvailableLaser.laser_choices
+            'available_lasers': list(lasers_without_users.values_list('id', flat=True))
         }
         
     return render(request, 'signup.html', context)
@@ -133,6 +136,10 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             UserProfile.objects.all().delete()    
+            Laser.objects.all().delete()
+            Laser.objects.create(id='Red')
+            Laser.objects.create(id='Green')
+            Laser.objects.create(id='Purple')
             log(request, user)
             return redirect('admin_panel')
         else:

@@ -18,12 +18,15 @@
     <button class="mx-4 py-3 px-7 bg-black text-white font-bold text-3xl rounded-full"><a href="/">V/G</a></button>
     
     <div class="flex items-center space-x-4  font-bold">
-        <button class="hidden sm:block bg-[#181818] py-3 px-7  md:bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/register">Register User</a></button>
-        <button id="openSidebarBtn" class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
+        <button class="hidden sm:block {% if users %} md:bg-[#636363] {% endif %} bg-[#181818] py-3 px-7   text-white rounded-full hover:text-gray-700"><a href="/register">Register User</a></button>
+        {% if users %}
+            <button id="openSidebarBtn" class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
+        {% endif %}
         <button class="py-3 px-7 bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/logout">Log Out</a></button>
     </div>
 </nav>
 
+{% if users %}
 <div id="sidebar" class="fixed top-0 right-0 h-1/5 bg-[#181818] p-4 transition-transform ease-in-out duration-300 rounded-lg hidden border border-gray-500 lg:border-none md:block md:w-4/5 md:h-1/4 lg:w-2/5 xl:w-[22.5%] lg:h-1/2"
     style="transform: translateX(100%);">    <button id="closeSidebarBtn" class="font-bold text-4xl text-white">></button>
     <div class="font-bold text-4xl text-white underline text-center">Settings</div>
@@ -33,30 +36,30 @@
         <!-- Laser dropdown -->
         <div class="md:flex hidden items-center lg:mb-4 w-full">
             <span class="font-bold mr-2">Laser:</span>
-            <select class="bg-[#434343] text-white p-2 rounded">
-                <option value="green">Green</option>
-                <option value="purple">Purple</option>
-                <option value="red">Red</option>
+            <select id="laserDropdown" class="bg-[#434343] text-white p-2 rounded">
+                {% for user in users %}
+                    <option value="{{ user.laser.id }}">{{ user.laser.id }}</option>
+                {% endfor %}
             </select>
         </div>
 
         <!-- Color window -->
         <div class="md:flex hidden items-center lg:mb-4 w-full">
             <span class="font-bold mr-2">Color:</span>
-            <input type="color" class="rounded">
+            <input type="color" id="colorInput" class="rounded">
         </div>
 
         <!-- Size input -->
         <div class="lg:flex hidden items-center lg:mb-4 w-full">
             <span class="font-bold mr-2">Size:</span>
-            <input type="number" class="bg-[#434343] text-white p-2 rounded" min="1" max="200">
+            <input type="number" id="sizeInput" class="bg-[#434343] text-white p-2 rounded" min="1" max="200">
             <span>px</span>
         </div>
 
         <!-- Style input -->
         <div class="md:flex hidden items-center w-full">
             <span class="font-bold mr-2">Style:</span>
-            <select class="bg-[#434343] text-white p-2 rounded">
+            <select id="styleDropdown" class="bg-[#434343] text-white p-2 rounded">
                 <option value="fountain">Fountain</option>
                 <option value="pencil">Pencil</option>
                 <option value="spray">Spray</option>
@@ -64,6 +67,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 
 <script>

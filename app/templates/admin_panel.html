@@ -58,11 +58,11 @@
                         <div class="flex items-center bg-[#636363] font-bold text-lg rounded h-2/3 mb-4">
                             <div class="flex-grow"> {{ user.first_name }}_{{ user.last_name }}'s 
                                 <span class="
-                                        {% if user.laser == 'Green' %}text-green-500
-                                        {% elif user.laser == 'Purple' %}text-purple-500
-                                        {% elif user.laser == 'Red' %}text-red-500
+                                        {% if user.laser.id == 'Green' %}text-green-500
+                                        {% elif user.laser.id == 'Purple' %}text-purple-500
+                                        {% elif user.laser.id == 'Red' %}text-red-500
                                         {% else %}bg-gray-500
-                                        {% endif %}">{{ user.laser }} Laser
+                                        {% endif %}">{{ user.laser.id }} Laser
                                 </span> 🔦
                             </div>
                             <a href="{% url 'disconnect_user' first_name=user.first_name last_name=user.last_name %}" class="text-sm m-2 px-2 bg-red-600 rounded-full">Disconnect</a>
