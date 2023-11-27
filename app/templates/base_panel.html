@@ -72,6 +72,16 @@
 {% endif %}
 
 <script>
+    document.addEventListener("DOMContentLoaded", (event) => {
+        setInterval(() => {
+            const id = document.getElementById('laserDropdown').value
+            if (id.length > 1) {
+              getLaser(id);
+            }
+        }, 10000);
+        
+    });
+
     function getCSRFToken() {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
@@ -81,7 +91,6 @@
         fetch(URL)
             .then(response => response.json())
             .then(data => {
-                console.log(data);
                 document.getElementById('colorInput').value = data.color;
                 document.getElementById('sizeInput').value = data.size;
                 var styleDropdown = document.getElementById('styleDropdown');
