@@ -24,28 +24,93 @@
                     <!-- Drawing Color Dropdown -->
                     <div class="mb-8 flex space-x-4 justify-center">
                         <label for="drawing_color">Drawing <span class="underline">Color</span>:</label>
-                        <input type="color" id="drawing_color" name="drawing_color" value="{% if laser_pointer == 'Green' %}#00ff00{% elif laser_pointer == 'Purple' %}#800080{% elif laser_pointer == 'Red' %}#ff0000{% endif %}" class="ml-2" />
+                        <input type="color" id="colorInput" value="{% if laser_pointer == 'Green' %}#00ff00{% elif laser_pointer == 'Purple' %}#800080{% elif laser_pointer == 'Red' %}#ff0000{% endif %}" class="ml-2" onchange="setLaser('color')"/>
                     </div>
                     
                     
 
                     <!-- Drawing Size Input -->
                     <div class="mb-8 flex space-x-4 justify-center">
-                        <label for="drawing_size">Drawing <span class="underline">Size</span>:</label>
-                        <input class="w-20 h-10 text-black font-bold" type="number" id="drawing_size" name="drawing_size" min="1" max="200" value="{{ default_size }}" class="ml-2" /> px
+                        <label>Drawing <span class="underline">Size</span>:</label>
+                        <input id="sizeInput" class="w-20 h-10 text-black font-bold" type="number" min="1" max="200" class="ml-2" onchange="setLaser('size')"/> px
                     </div>
 
                     <!-- Drawing Style Dropdown -->
                     <div class="mb-8 flex space-x-4 justify-center">
-                        <label for="drawing_style">Drawing <span class="underline">Style</span>:</label>
-                        <select id="drawing_style" name="drawing_style" class="ml-2 text-black font-bold text-sm h-10">
-                            <option value="fountain" {% if selected_style == 'fountain' %}selected{% endif %}>Fountain</option>
-                            <option value="pencil" {% if selected_style == 'pencil' %}selected{% endif %}>Pencil</option>
-                            <option value="spray" {% if selected_style == 'spray' %}selected{% endif %}>Spray</option>
+                        <label>Drawing <span class="underline">Style</span>:</label>
+                        <select id='styleDropdown' class="ml-2 text-black font-bold text-sm h-10" onchange="setLaser('style')">
+                            <option value="fountain">Fountain</option>
+                            <option value="pencil">Pencil</option>
+                            <option value="spray">Spray</option>
                         </select>
                     </div>
                 </div>
             </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", (event) => {
+        const id = '{{laser_pointer}}';
+        getLaser(id);
+        setInterval(() => {
+            getLaser(id);
+        }, 10000);
+    });
+
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]');
+    }
+
+    function getLaser(id) {
+        const URL = 'http://localhost:8000/get_laser/' + id;
+        fetch(URL)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('colorInput').value = data.color;
+                document.getElementById('sizeInput').value = data.size;
+                var styleDropdown = document.getElementById('styleDropdown');
+                for (var i = 0; i < styleDropdown.options.length; i++) {
+                    var option = styleDropdown.options[i];
+                    if (option.value === data.style) {
+                        option.selected = true;
+                    } else {
+                        option.selected = false;
+                    }
+                }
+                
+            })
+            .catch(error => console.error('Error fetching laser details:', error));
+    }
+    
+    function setLaser(feature) {
+        const id = '{{laser_pointer}}';
+        const color_input = document.getElementById('colorInput').value;
+        const size_input = document.getElementById('sizeInput').value;
+        const style_input = document.getElementById('styleDropdown').value;
+        var data = null;
+
+        if (feature === 'color') {
+            data = color_input;
+        } else if (feature === 'size') {
+            data = size_input;
+        } else if (feature === 'style') {
+            data = style_input;
+        }
+        console.log(data)
+        const URL = 'http://localhost:8000/set_laser_' + feature + '/' + id + '/';
+        
+
+        fetch(URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken().content,
+            },
+            body: JSON.stringify({ data }),
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error updating laser details:', error));
+    }
+</script>
 {% endblock %}
