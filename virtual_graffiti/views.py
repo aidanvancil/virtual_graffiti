@@ -92,8 +92,8 @@ def settings(request, user_identifier):
     except:
         return errors(request)
     
-    laser_pointer = Laser.get(id=laser_pointer)
-    user = UserProfile.objects.filter(first_name=first_name, last_name=last_name, laser=laser_pointer)
+    laser_pointer = Laser.objects.get(id=laser_pointer)
+    user = UserProfile.objects.get(first_name=first_name, last_name=last_name, laser=laser_pointer)
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',
