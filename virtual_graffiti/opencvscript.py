@@ -12,6 +12,29 @@ def enumerate_cameras():
 
     return index
 
+def edge_detection(frame):
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Apply GaussianBlur to reduce noise and help with edge detection
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Apply Canny edge detector
+    edges = cv2.Canny(blurred, 50, 150)
+
+    return edges
+
+def update_canvas_color(canvas, x, y, color):
+    # Draw a colored point on the canvas
+    cv2.circle(canvas, (x, y), 3, color, -1)
+
+def get_color_from_index(index):
+    # Define colors for each laser
+    colors = [(0, 0, 255), (0, 255, 0)]  # Red and Green
+
+    # Return the corresponding color for the given index
+    return colors[index]
+
 
 if __name__ == "__main__":
     camera_index = enumerate_cameras()

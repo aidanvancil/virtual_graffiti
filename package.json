@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "npx": "^10.2.2"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.5"
+  }
+}
