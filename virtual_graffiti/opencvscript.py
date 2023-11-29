@@ -12,6 +12,18 @@ def enumerate_cameras():
 
     return index
 
+def color_segmentation(frame, lower_color, upper_color):
+    # Convert BGR to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # Threshold the HSV image to get only specified color
+    mask = cv2.inRange(hsv, lower_color, upper_color)
+    
+    # Bitwise-AND mask and original image
+    segmented = cv2.bitwise_and(frame, frame, mask=mask)
+
+    return segmented
+
 def edge_detection(frame):
     # Convert the frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -34,7 +46,6 @@ def get_color_from_index(index):
 
     # Return the corresponding color for the given index
     return colors[index]
-
 
 if __name__ == "__main__":
     camera_index = enumerate_cameras()
@@ -65,9 +76,29 @@ if __name__ == "__main__":
                 print("Error: Failed to capture frame.")
                 break
 
+            # Apply color segmentation for red laser
+            red_segmented = color_segmentation(frame, lower_red, upper_red)
+
+            # Apply color segmentation for green laser
+            green_segmented = color_segmentation(frame, lower_green, upper_green)
+
+            # Update canvas based on laser positions and color
+            for i, segmented in enumerate([red_segmented, green_segmented]):
+                edges = edge_detection(segmented)
+                contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                for contour in contours:
+                    if cv2.contourArea(contour) > 50:  # Adjust the area threshold as needed
+                        moments = cv2.moments(contour)
+                        if moments["m00"] != 0:
+                            cx = int(moments["m10"] / moments["m00"])
+                            cy = int(moments["m01"] / moments["m00"])
+                            color = get_color_from_index(i)
+                            update_canvas_color(canvas, cx, cy, color)
 
             # Display the original frame, red laser edges, green laser edges, and canvas
             cv2.imshow('Original', frame)
+            cv2.imshow('Red Laser Edges', edge_detection(red_segmented))
+            cv2.imshow('Green Laser Edges', edge_detection(green_segmented))
             cv2.imshow(canvas_window_name, canvas)
 
             # Break the loop if 'q' key is pressed
