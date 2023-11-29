@@ -20,18 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+mt@3$^#3d^xw!urih0$-cu@v+e9g5_7uqxougrw!jx46lt#h+'
+SECRET_KEY = 'django-insecure-sn73sgam#p1p^-!#i4&i%nhmdjg2&!)2qs7u70^@1t6n#e0=k6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # '27fc-47-33-18-76.ngrok-free.app', 
+#CSRF_TRUSTED_ORIGINS = ['https://27fc-47-33-18-76.ngrok-free.app/']
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 TAILWIND_APP_NAME = 'app'
-
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
 
 # Application definition
 
@@ -43,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tailwind',
-    'app',
     'django_browser_reload',
+    'app',
+    
 ]
 
 MIDDLEWARE = [
@@ -52,10 +50,11 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
 
 ROOT_URLCONF = 'virtual_graffiti.urls'
@@ -74,6 +73,10 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+INTERNAL_IPS = [
+    "127.0.0.1",
 ]
 
 WSGI_APPLICATION = 'virtual_graffiti.wsgi.application'

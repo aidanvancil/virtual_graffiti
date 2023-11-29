@@ -2,16 +2,24 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-    <title>Django Tailwind</title>
+    <title>Virtual Graffiti</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<meta name="csrf-token" content="{{ csrf_token }}">
 		{% tailwind_css %}
 	</head>
 
-	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
-		<div class="container mx-auto">
+	<body 
+		class="overflow-hidden"
+		style="{% if gradient %}background: linear-gradient(to bottom, {{from_gradient}}, {{to_gradient}}); {% endif %}"
+	>
+		<header>
+			<button class="mx-4 mt-4 py-3 px-7 bg-black text-white font-bold text-3xl rounded-full"><a href="/">V/G</a></button>
+		</header>
+	
+		<main class="">
 			{% block content %}{% endblock %}
-		</div>
+		</main>
 	</body>
 </html>

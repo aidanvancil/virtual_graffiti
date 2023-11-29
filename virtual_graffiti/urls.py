@@ -15,11 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
-from app import views
+from django.urls import path, include, re_path
+from . import views
 
 urlpatterns = [
+    path("__reload__/", include("django_browser_reload.urls")),
     path('admin/', admin.site.urls),
-    path('__reload__/', include("django_browser_reload.urls")),
-    path('', views.master),
+    path('admin_panel/', views.admin_panel, name='admin_panel'),
+    path('video_feed/', views.video_feed, name='video_feed'),
+    path('', views.login, name='login'),
+    path('register/', views.signup, name='signup'),
+    path('logout/', views.logout, name='logout'),
+    path('settings/<str:user_identifier>/', views.settings, name='settings'),
+    path('disconnect/<str:first_name>_<str:last_name>/', views.remove_user_and_release_laser, name='disconnect_user'),
+    path('set_laser_color/<str:laser_id>/', views.set_laser_color, name='set_laser_color'),
+    path('set_laser_size/<str:laser_id>/', views.set_laser_size, name='set_laser_size'),
+    path('set_laser_style/<str:laser_id>/', views.set_laser_style, name='set_laser_style'),
+    path('get_laser/<str:laser_id>/', views.get_laser, name='get_laser'),
+    re_path(r'^.*/$', views.errors, name='errors'),
 ]

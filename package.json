@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "npx": "^10.2.2"
+  },
+  "devDependencies": {
+<<<<<<< HEAD
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+=======
+>>>>>>> 8138c5588760bf117b33a333d6500b2efd2672c4
+    "tailwindcss": "^3.3.5"
+  }
+}

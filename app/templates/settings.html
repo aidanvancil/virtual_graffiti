@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center h-screen mt-[-5vh]">
+    <div class="p-5 px-5 w-11/12 md:w-1/2 lg:w-1/3 sm:h-3/5 h-auto bg-[#181818] rounded-lg flex flex-col items-center text-white font-bold">
+            <h1 class="text-center underline text-3xl md:text-5xl">Settings</h1>
+            <div>
+                <div class="mb-8 mt-8 flex space-x-4 justify-center max-w-xs text-center">
+                    <p for="first_name">Hello, <span class="text-gray-500 font-bold"> {{ first_name }} {{ last_name }}!</span> Configure your laser pointer to your desired settings (font, size, style, and more).</p>
+                </div>
+                
+                <div class="mb-8 flex space-x-4 justify-center">
+                    <label for="laser" class="text-white">
+                        Your Laser's Color:
+                        <span class="{% if laser_pointer == 'Red' %}text-red-500{% elif laser_pointer == 'Green' %}text-green-500{% elif laser_pointer == 'Purple' %}text-purple-500{% endif %}">
+                            {{ laser_pointer }}
+                        </span>
+                    </label>
+                </div>
+
+                <div>
+                    <!-- Drawing Color Dropdown -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label for="drawing_color">Drawing <span class="underline">Color</span>:</label>
+                        <input type="color" id="colorInput" value="{% if laser_pointer == 'Green' %}#00ff00{% elif laser_pointer == 'Purple' %}#800080{% elif laser_pointer == 'Red' %}#ff0000{% endif %}" class="ml-2" onchange="setLaser('color')"/>
+                    </div>
+                    
+                    
+
+                    <!-- Drawing Size Input -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label>Drawing <span class="underline">Size</span>:</label>
+                        <input id="sizeInput" class="w-20 h-10 text-black font-bold" type="number" min="1" max="200" class="ml-2" onchange="setLaser('size')"/> px
+                    </div>
+
+                    <!-- Drawing Style Dropdown -->
+                    <div class="mb-8 flex space-x-4 justify-center">
+                        <label>Drawing <span class="underline">Style</span>:</label>
+                        <select id='styleDropdown' class="ml-2 text-black font-bold text-sm h-10" onchange="setLaser('style')">
+                            <option value="fountain">Fountain</option>
+                            <option value="pencil">Pencil</option>
+                            <option value="spray">Spray</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", (event) => {
+        const id = '{{laser_pointer}}';
+        getLaser(id);
+        setInterval(() => {
+            getLaser(id);
+        }, 10000);
+    });
+
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]');
+    }
+
+    function getLaser(id) {
+        const URL = 'http://localhost:8000/get_laser/' + id;
+        fetch(URL)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('colorInput').value = data.color;
+                document.getElementById('sizeInput').value = data.size;
+                var styleDropdown = document.getElementById('styleDropdown');
+                for (var i = 0; i < styleDropdown.options.length; i++) {
+                    var option = styleDropdown.options[i];
+                    if (option.value === data.style) {
+                        option.selected = true;
+                    } else {
+                        option.selected = false;
+                    }
+                }
+                
+            })
+            .catch(error => console.error('Error fetching laser details:', error));
+    }
+    
+    function setLaser(feature) {
+        const id = '{{laser_pointer}}';
+        const color_input = document.getElementById('colorInput').value;
+        const size_input = document.getElementById('sizeInput').value;
+        const style_input = document.getElementById('styleDropdown').value;
+        var data = null;
+
+        if (feature === 'color') {
+            data = color_input;
+        } else if (feature === 'size') {
+            data = size_input;
+        } else if (feature === 'style') {
+            data = style_input;
+        }
+        console.log(data)
+        const URL = 'http://localhost:8000/set_laser_' + feature + '/' + id + '/';
+        
+
+        fetch(URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken().content,
+            },
+            body: JSON.stringify({ data }),
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error updating laser details:', error));
+    }
+</script>
+{% endblock %}
