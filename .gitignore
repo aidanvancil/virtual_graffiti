@@ -1,5 +1,6 @@
 # Python
 app/static_src/node_modules/
+app/static/css/
 app/migrations/
 app/__pycache__/
 *.pyc
