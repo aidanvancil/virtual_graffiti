@@ -9,6 +9,7 @@ import qrcode
 import base64
 from io import BytesIO
 import json
+import numpy as np
 
 HOST = "localhost:8000"
 
@@ -31,18 +32,56 @@ def get_laser(request, laser_id):
 
 @gzip.gzip_page
 def video_feed(request):
-    # Open the camera (adjust the camera index as needed, e.g., 0 for the default camera)
     cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FPS, 60)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 
+    color_ranges = {
+        'red': ([0, 100, 100], [5, 255, 255]),
+        'purple': ([130, 50, 50], [160, 255, 255]),
+        'green': ([50, 50, 50], [80, 255, 255]),
+    }
+
+    def get_color(color):
+        if color == 'red':
+            return (0, 0, 255)
+        elif color == 'purple':
+            return (255, 0, 255)
+        elif color == 'green':
+            return (0, 255, 0)
+        else:
+            return (255, 255, 255)
+        
     def generate():
         try:
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
+
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+                color_centers = {'red': [], 'purple': [], 'green': []}
+
+                for color, (lower, upper) in color_ranges.items():
+                    mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
+
+                    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    largest_contour = max(contours, key=cv2.contourArea, default=None)
+
+                    if largest_contour is not None:
+                        M = cv2.moments(largest_contour)
+                        if M["m00"] != 0:
+                            cx = int(M["m10"] / M["m00"])
+                            cy = int(M["m01"] / M["m00"])
+                            color_centers[color] = (cx, cy)
+
+                for color, center in color_centers.items():
+                    if center:
+                        cv2.circle(frame, center, 10, get_color(color), -1)
+
+                        
 
                 _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
                 frame_bytes = jpeg.tobytes()
