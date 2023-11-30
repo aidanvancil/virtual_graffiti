@@ -1,7 +1,7 @@
 # Python
-app/static_src/node_modules
-app/migrations
-app/__pycache__
+app/static_src/node_modules/
+app/migrations/
+app/__pycache__/
 *.pyc
 *.pyo
 *.pyd
