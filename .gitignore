@@ -1,5 +1,8 @@
 # Python
-__pycache__/
+app/static_src/node_modules/
+app/static/css/
+app/migrations/
+app/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -121,9 +124,7 @@ env/
 .sageMathData
 
 # Django Tailwind CSS
-tailwind.config.js
-static/styles/
-static/.postcss-cache/
+
 
 # macOS
 .DS_Store
@@ -236,9 +237,4 @@ env/
 .sageMath
 .sageMathData
 
-# Django Tailwind CSS
-tailwind.config.js
-static/styles/
-static/node_modules/
 
-static/.postcss-cache/
