@@ -11,8 +11,20 @@ from io import BytesIO
 import json
 import numpy as np
 
-HOST = "localhost:8000"
+'''   
+    Author(s): Foster Schmidt (F), Moises Moreno (M), Aidan Vancil (A)
+    Date(s):   11/12/23 - 12/03/23
+    
+    Description:
+    - (A + F) admin_panel, settings
+    - (M + F) register, login
+    - (A + M) video_feed
+    - (M) errors
+    - (A) set_laser_*, get_laser_*, disconnect
+    - (F) logout
+'''
 
+HOST = "localhost:8000"
 
 def get_laser(request, laser_id):
     if request.method == 'GET':
