@@ -28,7 +28,7 @@ Before you begin, ensure you have the following installed:
 
 3. **Install dependencies**
     ```
-    pip install -r requirements
+    pip install -r requirements.txt
     npm install
     ``` 
     (*npm install on directory containing package.json* + *only pip install -r if in virtual environment*)
