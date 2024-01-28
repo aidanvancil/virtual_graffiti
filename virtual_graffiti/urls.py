@@ -18,6 +18,19 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from . import views
 
+'''   
+    Author(s): Foster Schmidt (F), Moises Moreno (M), Aidan Vancil (A)
+    Date(s):   11/12/23 - 12/03/23
+    
+    Description:
+    - (A + F) admin, admin_panel, settings
+    - (M + F) register, login
+    - (A + M) models
+    - (M) errors
+    - (A) set_laser_*, get_laser_*, disconnect
+    - (F) logout
+'''
+
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path('admin/', admin.site.urls),
