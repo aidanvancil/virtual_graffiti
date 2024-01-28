@@ -12,7 +12,6 @@ import json
 
 HOST = "localhost:8000"
 
-
 def get_laser(request, laser_id):
     if request.method == 'GET':
         try:
@@ -32,7 +31,7 @@ def get_laser(request, laser_id):
 @gzip.gzip_page
 def video_feed(request):
     # Open the camera (adjust the camera index as needed, e.g., 0 for the default camera)
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, 60)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
