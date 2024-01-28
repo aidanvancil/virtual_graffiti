@@ -16,7 +16,7 @@ app/__pycache__/
 *.env
 *.pyc
 *.pyo
-__pycache__/
+__pycache__/*
 db.sqlite3
 media/
 staticfiles/
