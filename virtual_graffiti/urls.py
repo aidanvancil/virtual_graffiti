@@ -41,6 +41,7 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     path('settings/<str:user_identifier>/', views.settings, name='settings'),
     path('disconnect/<str:first_name>_<str:last_name>/', views.remove_user_and_release_laser, name='disconnect_user'),
+    path('initialize_projector/', views.initialize_projector, name='initialize_projector'),
     path('set_laser_color/<str:laser_id>/', views.set_laser_color, name='set_laser_color'),
     path('set_laser_size/<str:laser_id>/', views.set_laser_size, name='set_laser_size'),
     path('set_laser_style/<str:laser_id>/', views.set_laser_style, name='set_laser_style'),

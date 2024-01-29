@@ -3,12 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
 from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
+from django.conf import settings as _settings
+
 from app.models import UserProfile, Laser
 from screeninfo import get_monitors
 import random
 import cv2
 import qrcode
 import base64
+import os
 from io import BytesIO
 import json
 import numpy as np
@@ -93,7 +96,7 @@ def count_filled_pixels(canvas, background_image):
     total_pixels = background_image.shape[0] * background_image.shape[1]
     return filled_pixels, total_pixels
 
-def apply_glitter_effect(canvas, background_image, iterations=400, intensity=600, delay=8):
+def apply_glitter_effect(canvas, canvas_window_name, background_image, iterations=400, intensity=600, delay=8):
     for _ in range(iterations):
         for _ in range(intensity):
             x, y = random.randint(0, canvas.shape[1] - 1), random.randint(0, canvas.shape[0] - 1)
@@ -103,6 +106,10 @@ def apply_glitter_effect(canvas, background_image, iterations=400, intensity=600
         cv2.waitKey(delay)
 
 def initialize_projector(request):
+    if request.method != 'GET':
+        return JsonResponse({}, status=200)
+    
+
     red_lower = np.array([0, 100, 100])
     red_upper = np.array([10, 255, 255])
     green_lower = np.array([40, 100, 100])
@@ -187,7 +194,7 @@ def initialize_projector(request):
 
                             if fill_percentage >= FILL_THRESHOLD_PERCENT:
                                 # Apply glitter effect before filling the entire image
-                                apply_glitter_effect(canvas, background_image)
+                                apply_glitter_effect(canvas, canvas_window_name, background_image)
                                 # Fill in the entire image
                                 canvas[:, :] = background_image[:, :]
                         elif mode == 'free':
@@ -383,10 +390,18 @@ def logout(request):
 
 @login_required(login_url='login')
 def admin_panel(request):
+    IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
+    image_paths = None
+    if os.path.exists(IMAGE_DIR):
+        image_filenames = [f for f in os.listdir(IMAGE_DIR) if f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.PNG'))]
+    else:
+        return JsonResponse({'error': f'Image directory does not exist, see: {IMAGE_DIR}'})
+    
     context = {
         'gradient': True,
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
+        'images': image_filenames,
         'video_feed': True,
         'users': UserProfile.objects.all(),
         'range': [0] * (3 - UserProfile.objects.count())
