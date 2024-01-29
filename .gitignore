@@ -18,7 +18,9 @@ app/__pycache__/
 *.pyo
 __pycache__/*
 db.sqlite3
-media/
+*.png 
+*.jpg 
+*.jpeg
 staticfiles/
 *.pyc
 *.pyo
