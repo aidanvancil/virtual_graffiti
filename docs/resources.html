@@ -19,9 +19,9 @@
         <!-- Navigation Section -->
         <nav role="navigation" aria-label="Main Navigation" class="bg-black text-[#9DBC98] p-2 font-semibold">
             <ul class="flex justify-evenly">
-                <li><a href="index.html" class="hover:text-gray-400 hover:underline hover:animate-pulse">Home</a></li>
-                <li><a href="about.html" class="hover:text-gray-400 hover:underline hover:animate-pulse">About</a></li>
-                <li><a href="resources.html" class="hover:text-gray-400 hover:underline hover:animate-pulse text-[#F9EFDB]">Resources</a></li>
+                <li><a href="index.html" aria-label="index page" class="hover:text-gray-400 hover:underline hover:animate-pulse">Home</a></li>
+                <li><a href="about.html" aria-label="about page" class="hover:text-gray-400 hover:underline hover:animate-pulse">About</a></li>
+                <li><a href="resources.html" aria-label="resources page" class="hover:text-gray-400 hover:underline hover:animate-pulse">Resources</a></li>
             </ul>
         </nav>
     </div>
@@ -59,21 +59,15 @@
         <div class="w-1/2 container mx-auto p-4">
             <hr role="separator" class="h-2 my-4 bg-[#638889] border-0">
 
-            <ul role="list" class="list-disc text-md bg-[#638889] p-8 w-full rounded-lg flex flex-col mx-auto">
-                <li><strong>N/A</strong> <a href="[Link]">Link</a></li>
-                <li><strong>Websites:</strong>
-                    <ul role="list" class="list-disc pl-4">
-                        <li><a href="[Link to poster design]">Link to poster design</a></li>
-                        <li><a href="[Link to proj website]">Link to proj website</a></li>
-                    </ul>
-                </li>
-                <li><strong>Technical Reports:</strong>
-                    <ul role="list" class="list-disc pl-4">
-                        <li><a href="[Link to PA3]">Link to PA3</a></li>
-                        <li><a href="[Link to PA4, etc...]">Link to PA4, etc...</a></li>
-                    </ul>
-                </li>
-            </ul>
+            <div role="list" class="list-disc text-md bg-[#638889] p-8 w-full rounded-lg flex flex-col mx-auto">
+                <p><strong>N/A</strong> <a href="[Link]">Link</a></p>
+                <p><strong>Websites:</strong></p>
+                <p class="pl-4"><a href="[Link to poster design]">Link to poster design</a></p>
+                <p class="pl-4"><a href="[Link to proj website]">Link to proj website</a></p>
+                <p><strong>Technical Reports:</strong></p>
+                <p class="pl-4"><a href="[Link to PA3]">Link to PA3</a></p>
+                <p class="pl-4"><a href="[Link to PA4, etc...]">Link to PA4, etc...</a></p>
+            </div>
 
             <!-- Resources Section -->
             <section role="region" aria-labelledby="images-heading" class="pt-2">
