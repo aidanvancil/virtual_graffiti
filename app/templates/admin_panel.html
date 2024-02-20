@@ -19,13 +19,25 @@
     <div class="sm:w-1/2 hidden sm:flex items-center justify-center"> <!-- Left section -->
         <div class="h-[80vh] w-11/12 bg-[#434343] rounded-xl flex flex-col items-center justify-center">
             <div class="h-full w-11/12 bg-[#636363] rounded-xl flex items-center justify-center mx-auto my-auto">
-                <div class="h-[95%] w-[95%] bg-[#181818] rounded-xl">
-                    <div id="imageCarousel" class="splide w-3/4">
+                <div class="h-[95%] w-[95%] bg-[#181818] rounded-xl flex items-start justify-center">
+                    <div id="imageCarousel" class="splide w-4/5 mx-auto rounded-xl p-2 bg-white mt-[2.5%]">
+                        <div class="splide__arrows flex justify-between">
+                            <button class="splide__arrow splide__arrow--prev bg-white opacity-100 w-auto px-3 rounded-md transition duration-300 ease-in-out transform hover:scale-110">
+                                Prev
+                            </button>
+                            <button class="splide__arrow splide__arrow--next bg-white opacity-100 w-auto px-3 rounded-md transition duration-300 ease-in-out transform hover:scale-110">
+                                Next
+                            </button>
+                        </div>
                         <div class="splide__track">
                             <ul class="splide__list">
                                 {% for image in images %}
-                                    <li class="splide__slide">
-                                        <img src="{% static 'media/' %}{{ image }}" alt="Image">
+                                    <li class="splide__slide rounded-xl relative">
+                                        <img src="{% static 'media/' %}{{ image }}" alt="Image" class="">
+                                        <a class="text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 px-3 py-1 rounded-md transition duration-300 ease-in-out transform hover:scale-110"
+                                            href="{% static 'media/' %}{{ image }}">
+                                            <span class="">Submit</span>
+                                        </a>
                                     </li>
                                 {% endfor %}
                             </ul>
