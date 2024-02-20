@@ -180,6 +180,7 @@ def admin_panel(request):
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
         'images': image_filenames,
+        'init': request.session.get('init', False),
         'video_feed': True,
         'users': UserProfile.objects.all(),
         'range': [0] * (3 - UserProfile.objects.count())

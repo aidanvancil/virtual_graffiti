@@ -64,7 +64,7 @@ def apply_glitter_effect(canvas, canvas_window_name, background_image, iteration
     for _ in range(iterations):
         for _ in range(intensity):
             x, y = random.randint(0, canvas.shape[1] - 1), random.randint(0, canvas.shape[0] - 1)
-            if np.all(canvas[y, x] == [0, 0, 0]):  # Check if the pixel is unfilled
+            if np.all(canvas[y, x] == [0, 0, 0]): 
                 canvas[y, x] = background_image[y, x]
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
@@ -77,10 +77,14 @@ def submit_image(request):
         request.session['image_queue'] = image_queue
         return JsonResponse({'message': 'Image submitted successfully.'}, status=200)
     else:
+        print(request)
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
     
 def poll(request):
     if request.method == 'GET':    
+        if not request.session.get('init', False):
+            request.session['init'] = True
+
         red_lower = np.array([0, 100, 100])
         red_upper = np.array([10, 255, 255])
         green_lower = np.array([40, 100, 100])
@@ -89,10 +93,10 @@ def poll(request):
         purple_lower = np.array([160, 255, 255])
 
         image_queue = request.session.get('image_queue', [])
-        if not image_queue:
-            return JsonResponse({'message': 'Image queue is empty.'}, status=405)
-
-        curr_image = image_queue.pop(0)
+        curr_image = None
+        if image_queue:
+            curr_image = image_queue.pop(0)
+            
         mode = 'fill' if curr_image else 'free'
         camera_indexes = enumerate_cameras()
         
@@ -100,11 +104,9 @@ def poll(request):
             return JsonResponse({'message': 'No cameras found.'}, status=400)
 
         cap = cv2.VideoCapture(camera_indexes[0], cv2.CAP_DSHOW)
-
+        cap.set(cv2.CAP_PROP_FPS, 60)
         screen_width = cap.get(3) 
         screen_height = cap.get(4)
-        print(screen_height)
-        print(screen_width) 
         
         canvas_width, canvas_height = int(screen_width), int(screen_height)
         
