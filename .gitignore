@@ -18,10 +18,14 @@ app/__pycache__/
 *.pyo
 __pycache__/*
 db.sqlite3
-media/
+*.sqlite3
+*.png 
+*.jpg 
+*.jpeg
 staticfiles/
 *.pyc
 *.pyo
+migrations/
 
 # Node.js
 node_modules/
