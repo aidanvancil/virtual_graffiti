@@ -33,6 +33,7 @@ from . import views, admin_views, mobile_views
 
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
+    path('check_reset_signal/', views.check_reset_signal, name='check_reset_signal'),
     path('admin/', admin.site.urls),
     path('admin_panel/', views.admin_panel, name='admin_panel'),
     path('video_feed/', admin_views.video_feed, name='video_feed'),
@@ -43,6 +44,7 @@ urlpatterns = [
     path('disconnect/<str:first_name>_<str:last_name>/', views.remove_user_and_release_laser, name='disconnect_user'),
     path('poll/', admin_views.poll, name='poll'),
     path('submit_image/', admin_views.submit_image, name='submit_image'),
+    path('_init/', admin_views.init, name='_init'),
     path('set_laser_color/<str:laser_id>/', views.set_laser_color, name='set_laser_color'),
     path('set_laser_size/<str:laser_id>/', views.set_laser_size, name='set_laser_size'),
     path('set_laser_style/<str:laser_id>/', views.set_laser_style, name='set_laser_style'),

@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login as log, logout as auth_logou
 from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
 from django.conf import settings as _settings
+from django.views.decorators.csrf import csrf_exempt
 
 from app.models import UserProfile, Laser
 from screeninfo import get_monitors
@@ -129,7 +130,6 @@ def signup(request):
 
 def login(request):
     if request.user.is_authenticated:
-        # Redirect to admin_panel if the user is already authenticated
         return redirect('admin_panel')
     
     if request.method == 'POST':
@@ -169,23 +169,35 @@ def logout(request):
 
 @login_required(login_url='login')
 def admin_panel(request):
-    IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
-    if os.path.exists(IMAGE_DIR):
-        image_filenames = [f for f in os.listdir(IMAGE_DIR) if f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.PNG'))]
-    else:
-        return JsonResponse({'error': f'Image directory does not exist, see: {IMAGE_DIR}'})
-    
+    try:
+        absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
+        with open(absolute_path, 'r+') as f:
+            reset_signal = int(f.read().strip())
+            if reset_signal:
+                f.seek(0)
+                f.write('0')
+                request.session['init'] = False
+    except Exception as e:
+        print(e)
+        
     context = {
         'gradient': True,
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
-        'images': image_filenames,
         'init': request.session.get('init', False),
         'video_feed': True,
         'users': UserProfile.objects.all(),
-        'range': [0] * (3 - UserProfile.objects.count())
+        'range': [0] * (3 - UserProfile.objects.count()),
     } 
+    
+    IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
+    if os.path.exists(IMAGE_DIR):
+        image_filenames = [f for f in os.listdir(IMAGE_DIR) if f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.PNG'))]
+        context['images'] = image_filenames
+    else:
+        context['error'] = f'Image directory does not exist, see: {IMAGE_DIR}'    
     return render(request, 'admin_panel.html', context)
+
 
 def errors(request):
     context = {
@@ -195,3 +207,14 @@ def errors(request):
         'error': 404
     }
     return render(request, 'errors.html', context)
+
+@csrf_exempt
+def check_reset_signal(request):
+    try:
+        absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
+        with open(absolute_path, 'r') as f:
+            reset_signal = int(f.read().strip())
+        return JsonResponse({'reset_signal': reset_signal})
+    except Exception as e:
+        print(e)
+        return JsonResponse({'error': 'Error checking reset signal'}, status=500)
