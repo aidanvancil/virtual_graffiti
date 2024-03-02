@@ -77,11 +77,11 @@ if __name__ == "__main__":
     
     camera_indexes = enumerate_cameras()
 
-    if len(camera_indexes) == 0:
-        print("No cameras found.")
-        exit()
+#    if len(camera_indexes) == 0:
+#        print("No cameras found.")
+#        exit()
 
-    cap = cv2.VideoCapture(camera_indexes[0], cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(-1, cv2.CAP_DSHOW)
 
     screen_width = cap.get(3)
     screen_height = cap.get(4)
