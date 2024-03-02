@@ -58,6 +58,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'virtual_graffiti.urls'
+#NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
 
 TEMPLATES = [
     {

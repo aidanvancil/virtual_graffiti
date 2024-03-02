@@ -3,15 +3,34 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as log, logout as auth_logout
 from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
+from django.conf import settings as _settings
+from django.views.decorators.csrf import csrf_exempt
+
 from app.models import UserProfile, Laser
+from screeninfo import get_monitors
+import random
 import cv2
 import qrcode
 import base64
+import os
 from io import BytesIO
 import json
+import numpy as np
+
+'''   
+    Author(s): Foster Schmidt (F), Moises Moreno (M), Aidan Vancil (A)
+    Date(s):   11/12/23 - 12/03/23
+    
+    Description:
+    - (A + F) admin_panel, settings
+    - (M + F) register, login
+    - (A + M) video_feed
+    - (M) errors
+    - (A) set_laser_*, get_laser_*, disconnect
+    - (F) logout
+'''
 
 HOST = "localhost:8000"
-
 
 def get_laser(request, laser_id):
     if request.method == 'GET':
@@ -28,32 +47,6 @@ def get_laser(request, laser_id):
         })
         
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
-
-@gzip.gzip_page
-def video_feed(request):
-    # Open the camera (adjust the camera index as needed, e.g., 0 for the default camera)
-    cap = cv2.VideoCapture(1)
-    cap.set(cv2.CAP_PROP_FPS, 60)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
-
-    def generate():
-        try:
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
-                frame_bytes = jpeg.tobytes()
-
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
-        finally:
-            cap.release()
-
-    response = StreamingHttpResponse(generate(), content_type="multipart/x-mixed-replace;boundary=frame")
-    return response
 
 def set_laser_color(request, laser_id):
     data = json.loads(request.body)
@@ -75,35 +68,6 @@ def set_laser_style(request, laser_id):
     laser.style = data['data']
     laser.save()
     return JsonResponse({'success': True}, status=200)
-    
-def errors(request):
-    context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF',
-        'error': 404
-    }
-    return render(request, 'errors.html', context)
-
-def settings(request, user_identifier):
-    try:
-        user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
-        first_name, last_name, laser_pointer = user_identifier_decoded.split('_')
-    except:
-        return errors(request)
-    
-    laser_pointer = Laser.objects.get(id=laser_pointer)
-    user = UserProfile.objects.get(first_name=first_name, last_name=last_name, laser=laser_pointer)
-    context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF',
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'laser_pointer': user.laser.id,
-    }
-
-    return render(request, 'settings.html', context)
 
 @login_required(login_url='login')
 def remove_user_and_release_laser(request, first_name, last_name):
@@ -166,7 +130,6 @@ def signup(request):
 
 def login(request):
     if request.user.is_authenticated:
-        # Redirect to admin_panel if the user is already authenticated
         return redirect('admin_panel')
     
     if request.method == 'POST':
@@ -206,13 +169,52 @@ def logout(request):
 
 @login_required(login_url='login')
 def admin_panel(request):
+    try:
+        absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
+        with open(absolute_path, 'r+') as f:
+            reset_signal = int(f.read().strip())
+            if reset_signal:
+                f.seek(0)
+                f.write('0')
+                request.session['init'] = False
+    except Exception as e:
+        print(e)
+        
     context = {
         'gradient': True,
         'from_gradient': '#FFE700',
         'to_gradient': '#4DEEEA',
+        'init': request.session.get('init', False),
         'video_feed': True,
         'users': UserProfile.objects.all(),
-        'range': [0] * (3 - UserProfile.objects.count())
+        'range': [0] * (3 - UserProfile.objects.count()),
     } 
+    
+    IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
+    if os.path.exists(IMAGE_DIR):
+        image_filenames = [f for f in os.listdir(IMAGE_DIR) if f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.PNG'))]
+        context['images'] = image_filenames
+    else:
+        context['error'] = f'Image directory does not exist, see: {IMAGE_DIR}'    
     return render(request, 'admin_panel.html', context)
 
+
+def errors(request):
+    context = {
+        'gradient': True,
+        'from_gradient': '#74EE15',
+        'to_gradient': '#F000FF',
+        'error': 404
+    }
+    return render(request, 'errors.html', context)
+
+@csrf_exempt
+def check_reset_signal(request):
+    try:
+        absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
+        with open(absolute_path, 'r') as f:
+            reset_signal = int(f.read().strip())
+        return JsonResponse({'reset_signal': reset_signal})
+    except Exception as e:
+        print(e)
+        return JsonResponse({'error': 'Error checking reset signal'}, status=500)

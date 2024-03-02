@@ -1,5 +1,14 @@
 from django.db import models
 
+'''   
+    Author(s): Aidan Vancil (A), Moises Moreno (M)
+    Date(s):   11/12/23 - 12/03/23
+    
+    Description:
+    - (A) Laser Model
+    - (M) User Auth Model w/ Laser
+'''
+
 class Laser(models.Model):
     id = models.CharField(max_length=10, primary_key=True)
     color = models.CharField(max_length=30, default='#777777', null=True)

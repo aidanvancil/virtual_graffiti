@@ -1,7 +1,7 @@
 # Virtual Graffiti
 ![logo](https://github.com/aidanvancil/virtual_graffiti/assets/42700427/31b8720b-67e0-4368-886a-e223dfc00d05)
 
-Welcome to Virtual Graffiti! This project allows you to create amazing digital and displayable artwork with ease. Follow the instructions below to get started (for Team 33).
+Welcome to Virtual Graffiti! This project allows you to create amazing digital and displayable artwork with ease. Follow the instructions below to get started (for Team 33 [Aidan Vancil, Foster Schmidt, Moises Moreno]).
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ Before you begin, ensure you have the following installed:
 
 3. **Install dependencies**
     ```
-    pip install -r requirements
+    pip install -r requirements.txt
     npm install
     ``` 
     (*npm install on directory containing package.json* + *only pip install -r if in virtual environment*)
