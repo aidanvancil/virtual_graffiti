@@ -2,15 +2,22 @@ from django.shortcuts import render, redirect
 from django.views.decorators import gzip
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from subprocess import Popen
-from channels.layers import get_channel_layer
+from app.models import Image 
+from virtual_graffiti.resources import algorithm
+from django.utils import timezone
+import threading
 import cv2
+import json
 import os
 
 def submit_image(request):
     if request.method == 'POST':
-        channel_layer = get_channel_layer()
-        image_url = request.POST.get('image_url')
-        channel_layer.group_send('myconsumergroup', {'type': 'send.image.url', 'image_url': image_url})
+        json_data = json.loads(request.body)
+        image_id = json_data['image_url']
+        if image_id is None:
+            return JsonResponse({'error': 'Invalid image submission.'}, status=400)
+        new_image = Image.objects.create(identifier=image_id, upload_date=timezone.now())
+        new_image.save()
         return JsonResponse({'message': 'Image submitted successfully.'}, status=200)
     else:
         print(request)
@@ -33,7 +40,9 @@ def init(request):
     return redirect('admin_panel')
 
 def poll(request):
-    return render(request, 'admin_panel.html')
+    poll_thread = threading.Thread(target=poll)
+    poll_thread.start()
+    return redirect('admin_panel')
 
 @gzip.gzip_page
 def video_feed(request):

@@ -11,7 +11,7 @@ app/__pycache__/
 *.log
 *.pot
 *.pyc
-
+temp/reset_signal.txt
 # Django
 *.env
 *.pyc
