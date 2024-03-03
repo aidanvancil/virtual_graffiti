@@ -93,7 +93,8 @@ def init():
         curr_image = None
         
     mode = 'fill' if curr_image else 'free'
-    cap_idx = camera_indexes[1]
+    print(camera_indexes)
+    cap_idx = camera_indexes[0]
     cap = cv2.VideoCapture(cap_idx, cv2.CAP_DSHOW)
     cap.set(cv2.CAP_PROP_FPS, 60)
     screen_width = cap.get(3) 

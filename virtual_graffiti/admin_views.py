@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators import gzip
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from subprocess import Popen
@@ -30,7 +30,7 @@ def init(request):
                 pass
             
         Popen(["python", "virtual_graffiti/resources/algorithm.py"])
-    return render(request, 'admin_panel.html')
+    return redirect('admin_panel')
 
 def poll(request):
     return render(request, 'admin_panel.html')

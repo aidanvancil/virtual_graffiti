@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'django_browser_reload',
+    'channels',
     'app',
     
 ]
