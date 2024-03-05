@@ -133,7 +133,6 @@ def init():
 
     with image_lock:
             curr_image = shared_curr_image
-            print("HERE")
     mode = 'fill' if curr_image else 'free'
     background_image = None
     if mode == 'fill':
