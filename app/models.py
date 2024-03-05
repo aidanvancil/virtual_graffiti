@@ -18,6 +18,7 @@ class Laser(models.Model):
     class Meta:
         app_label = 'app'
         
+#NFR4, UC07
 class UserProfile(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)

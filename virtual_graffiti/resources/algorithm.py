@@ -41,6 +41,7 @@ def enumerate_cameras():
         index += 1
     return arr
 
+#NFR6
 def is_laser_contour(contour, hsv_frame, min_area=20, max_area=200):
     if not min_area < cv2.contourArea(contour) < max_area:
         return False
@@ -59,6 +60,7 @@ def load_scaled_image(image_path, width, height):
         raise ValueError("Image not found")
     return cv2.resize(image, (width, height))
 
+#UC04
 def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=5):
     scaled_x = int(x * scale_factor)
     scaled_y = int(y * scale_factor)
@@ -72,6 +74,7 @@ def count_filled_pixels(canvas, background_image):
     total_pixels = background_image.shape[0] * background_image.shape[1]
     return filled_pixels, total_pixels
 
+#UC11
 def apply_glitter_effect(canvas, canvas_window_name, background_image, iterations=400, intensity=600, delay=8):
     for _ in range(iterations):
         for _ in range(intensity):
@@ -81,6 +84,7 @@ def apply_glitter_effect(canvas, canvas_window_name, background_image, iteration
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
 
+#UC12
 def poll():
     global shared_curr_image
     image_queue =  list(Image.objects.all().values_list('identifier', flat=True))
@@ -89,6 +93,7 @@ def poll():
             shared_curr_image = curr_image
     delete_image_by_url(curr_image) if curr_image is not None else None    
 
+#FR1, UC10
 def init():
     global shared_curr_image
     camera_indexes = enumerate_cameras()
@@ -141,7 +146,7 @@ def init():
             background_image = background_image[:, :, :3]
         else:
             JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
-    
+    #UC03
     while True:
         ret, frame = cap.read()
         if not ret:

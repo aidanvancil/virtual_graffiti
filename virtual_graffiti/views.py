@@ -77,6 +77,7 @@ def remove_user_and_release_laser(request, first_name, last_name):
         user_to_del.delete()
     return redirect(admin_panel)
 
+#UC01, FR4
 @login_required(login_url='login')
 def signup(request):
     if request.method == 'POST':
@@ -187,7 +188,7 @@ def admin_panel(request):
         'init': request.session.get('init', False),
         'video_feed': True,
         'users': UserProfile.objects.all(),
-        'range': [0] * (3 - UserProfile.objects.count()),
+        'range': [0] * (3 - UserProfile.objects.count()), #NFR4, FR4
     } 
     
     IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'

@@ -17,6 +17,7 @@ import json
 import numpy as np
 from . import views
 
+#UC06
 def settings(request, user_identifier):
     try:
         user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
