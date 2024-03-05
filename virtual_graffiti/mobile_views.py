@@ -17,15 +17,27 @@ import json
 import numpy as np
 from . import views
 
+#UC06
 def settings(request, user_identifier):
     try:
         user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
-        first_name, last_name, laser_pointer = user_identifier_decoded.split('_')
+        first_name, last_name, laser_pointer_id = user_identifier_decoded.split('_')
     except:
-        return views.errors(request)
+        return views.errors(request, error_code=302)
     
-    laser_pointer = Laser.objects.get(id=laser_pointer)
-    user = UserProfile.objects.get(first_name=first_name, last_name=last_name, laser=laser_pointer)
+    try:
+        laser_pointer = Laser.objects.get(id=laser_pointer_id)
+        user = UserProfile.objects.get(first_name=first_name, last_name=last_name, laser=laser_pointer)
+    except UserProfile.DoesNotExist:
+        print("User profile does not exist.")
+        return views.errors(request, error_code=302)
+    except Laser.DoesNotExist:
+        print("Laser does not exist.")
+        return views.errors(request, error_code=302)
+    except Exception as e:
+        print("Error retrieving user profile:", e)
+        return views.errors(request, error_code=500)
+    
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',

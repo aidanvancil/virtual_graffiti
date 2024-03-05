@@ -3,22 +3,32 @@ from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from screeninfo import get_monitors
 import random
 import cv2
+import threading
 import numpy as np
-import asyncio
-import websockets
-import queue
+import importlib
 import os 
 
-image_queue = queue.Queue()
+def import_image_model():
+    try:
+        module = importlib.import_module("app.models")
+        ImageModel = getattr(module, "Image")
+        return ImageModel
+    except ImportError:
+        print("Error: Unable to import Image model")
+        return None
+    
+shared_curr_image = None
+image_lock = threading.Lock()
+Image = import_image_model()
 
-async def receive_image_queue(websocket):
-    async for message in websocket:
-        image_url = message
-        # Process the received image URL in algorithm.py
-        print(f"Received image URL: {image_url}")
-        # Push the image to the queue
-        image_queue.put(image_url)
-        
+def delete_image_by_url(image_id):
+    try:
+        image = Image.objects.filter(identifier=image_id).first()
+        image.delete()
+        print(f"Image with id '{image_id}' deleted successfully.")
+    except Image.DoesNotExist:
+        print(f"Image with id '{image_id}' does not exist.")
+
 def enumerate_cameras():
     index = 0
     arr = []
@@ -31,6 +41,7 @@ def enumerate_cameras():
         index += 1
     return arr
 
+#NFR6
 def is_laser_contour(contour, hsv_frame, min_area=20, max_area=200):
     if not min_area < cv2.contourArea(contour) < max_area:
         return False
@@ -49,6 +60,7 @@ def load_scaled_image(image_path, width, height):
         raise ValueError("Image not found")
     return cv2.resize(image, (width, height))
 
+#UC04
 def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=5):
     scaled_x = int(x * scale_factor)
     scaled_y = int(y * scale_factor)
@@ -62,6 +74,7 @@ def count_filled_pixels(canvas, background_image):
     total_pixels = background_image.shape[0] * background_image.shape[1]
     return filled_pixels, total_pixels
 
+#UC11
 def apply_glitter_effect(canvas, canvas_window_name, background_image, iterations=400, intensity=600, delay=8):
     for _ in range(iterations):
         for _ in range(intensity):
@@ -70,8 +83,19 @@ def apply_glitter_effect(canvas, canvas_window_name, background_image, iteration
                 canvas[y, x] = background_image[y, x]
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
-            
+
+#UC12
+def poll():
+    global shared_curr_image
+    image_queue =  list(Image.objects.all().values_list('identifier', flat=True))
+    curr_image = image_queue.pop() if len(image_queue) else None
+    with image_lock:
+            shared_curr_image = curr_image
+    delete_image_by_url(curr_image) if curr_image is not None else None    
+
+#FR1, UC10
 def init():
+    global shared_curr_image
     camera_indexes = enumerate_cameras()
     if len(camera_indexes) == 0:
         print('No cameras found')
@@ -84,16 +108,8 @@ def init():
     green_upper = np.array([80, 255, 255])
     purple_upper = np.array([130, 50, 50])
     purple_lower = np.array([160, 255, 255])
-
-    try:
-        curr_image = image_queue.get_nowait()
-        print(f"Processing image: {curr_image}")
-    except queue.Empty:
-        print("Image queue is empty")
-        curr_image = None
-        
-    mode = 'fill' if curr_image else 'free'
-    cap_idx = camera_indexes[1]
+    
+    cap_idx = camera_indexes[0]
     cap = cv2.VideoCapture(cap_idx, cv2.CAP_DSHOW)
     cap.set(cv2.CAP_PROP_FPS, 60)
     screen_width = cap.get(3) 
@@ -105,16 +121,7 @@ def init():
     scale_factor_y = canvas_height / screen_height
     scale_factor = min(scale_factor_x, scale_factor_y)
 
-    background_image = None
-    if mode == 'fill':
-        if curr_image:
-            background_image = load_scaled_image(curr_image, canvas_width, canvas_height)
-            background_image = background_image[:, :, :3]
-        else:
-            JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
-
     canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
-
     canvas_window_name = 'Canvas'
     
     cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
@@ -129,6 +136,17 @@ def init():
 
     FILL_THRESHOLD_PERCENT = 0.80
 
+    with image_lock:
+            curr_image = shared_curr_image
+    mode = 'fill' if curr_image else 'free'
+    background_image = None
+    if mode == 'fill':
+        if curr_image:
+            background_image = load_scaled_image(curr_image, canvas_width, canvas_height)
+            background_image = background_image[:, :, :3]
+        else:
+            JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
+    #UC03
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -162,9 +180,6 @@ def init():
                                 apply_glitter_effect(canvas, canvas_window_name, background_image)
                                 # Fill in the entire image
                                 canvas[:, :] = background_image[:, :]
-                                if curr_image:
-                                    image_queue.task_done()
-
                         elif mode == 'free':
                             color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
                             cv2.circle(canvas, (cx, cy), 2, color, -1)
@@ -185,17 +200,6 @@ def init():
 
     cap.release()
     cv2.destroyAllWindows()
-
-async def main():
-    try:
-        async with websockets.serve(receive_image_queue, "localhost", 8767):
-            await asyncio.Future()
-    except:
-        pass
-        
-async def main_wrapper():
-    init()
-    await main()
         
 if __name__ == "__main__":
-    asyncio.run(main_wrapper())
+    init()

@@ -18,6 +18,7 @@ class Laser(models.Model):
     class Meta:
         app_label = 'app'
         
+#NFR4, UC07
 class UserProfile(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
@@ -25,3 +26,10 @@ class UserProfile(models.Model):
 
     class Meta:
         app_label = 'app'        
+
+class Image(models.Model):
+    identifier = models.CharField(max_length=255)
+    upload_date = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        app_label = 'app'   
+        ordering = ['-upload_date']
