@@ -5,7 +5,7 @@ from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
 from django.conf import settings as _settings
 from django.views.decorators.csrf import csrf_exempt
-
+from django.http import HttpResponseRedirect, HttpResponseNotFound
 from app.models import UserProfile, Laser
 from screeninfo import get_monitors
 import random
@@ -37,7 +37,7 @@ def get_laser(request, laser_id):
         try:
             laser = Laser.objects.get(id=laser_id)
         except Laser.DoesNotExist:
-            return errors(request)
+            return errors(request, error_code=302)
 
         print(laser)
         return JsonResponse({
@@ -199,14 +199,17 @@ def admin_panel(request):
     return render(request, 'admin_panel.html', context)
 
 
-def errors(request):
+def errors(request, error_code=404):
     context = {
         'gradient': True,
         'from_gradient': '#74EE15',
         'to_gradient': '#F000FF',
-        'error': 404
+        'error_code': error_code
     }
-    return render(request, 'errors.html', context)
+    response = render(request, 'errors.html', context)
+    response.status_code = error_code
+    response['Location'] = '/errors/' + str(error_code)
+    return response
 
 @csrf_exempt
 def check_reset_signal(request):
