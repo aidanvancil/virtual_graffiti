@@ -10,7 +10,6 @@ import importlib
 import math
 import os 
 import time
-from app.models import Laser, UserProfile
 import socket
 import threading
 
@@ -48,9 +47,7 @@ def is_laser_contour(contour, hsv_frame, min_area=20, max_area=200):
 def color_segmentation(frame, lower_color, upper_color):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower_color, upper_color)
-    segmented = cv2.bitwise_and(frame, frame, mask=mask)
-    segmented_gray = cv2.cvtColor(segmented, cv2.COLOR_BGR2GRAY)
-    return segmented_gray
+    return mask
 
 def load_scaled_image(image_path, width, height):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'app'))
@@ -69,26 +66,26 @@ def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radiu
     mask_indices = np.where(mask > 0)
     canvas[mask_indices] = background_image[mask_indices]
 
-def laser_is_registered(color):
-    red = (0, 0, 255)
-    green = (0, 255, 0)
-    color_map = {
-        str(green): (None, None),
-        str(red): (None, None)
-    }
-    try:
-        laser = Laser.objects.get(color=color_map[color])
-    except Laser.DoesNotExist:
-        return False
+# def is_registered(color):
+#     red = (0, 0, 255)
+#     green = (0, 255, 0)
+#     color_map = {
+#         str(green): (None, None),
+#         str(red): (None, None)
+#     }
+#     try:
+#         laser = Laser.objects.get(color=color_map[color])
+#     except Laser.DoesNotExist:
+#         return False
 
-    try:
-        UserProfile.objects.get(laser=laser)
-        return True
-    except UserProfile.DoesNotExist:
-        return False
+#     try:
+#         UserProfile.objects.get(laser=laser)
+#         return True
+#     except UserProfile.DoesNotExist:
+#         return False
 
 def smooth_drawing(last_point, current_point, canvas, color=(0, 0, 255), thickness=2, distance_threshold=50):
-    if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold and is_registered(color):
+    if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold: # and is_registered(color):
         cv2.line(canvas, last_point, current_point, color, thickness)
     return current_point
 
@@ -96,6 +93,18 @@ def count_filled_pixels(canvas, background_image):
     filled_pixels = np.sum(np.any(canvas != [0, 0, 0], axis=2))
     total_pixels = background_image.shape[0] * background_image.shape[1]
     return filled_pixels, total_pixels
+
+def calculate_thickness(dist):
+    thickness = 24
+    if 25 <= dist < 50:
+        thickness = 16
+    elif 50 <= dist < 75:
+        thickness = 8
+    elif 75 <= dist < 150:
+        thickness = 4
+    elif 150 <= dist:
+        thickness = 2
+    return thickness
 
 #UC11
 def apply_glitter_effect(canvas, canvas_window_name, background_image, iterations=400, intensity=600, delay=8):
@@ -146,10 +155,26 @@ def init():
     
     cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-    FILL_THRESHOLD_PERCENT = 0.80
+    frame_cnt = 0
+    FILL_THRESHOLD_PERCENT = .75
+    FRAME_DIVISOR = 5
+    MAX_DIST = 1024 
     HOST = 'localhost'
     PORT = 9999
     curr_image = None
+
+    red = (0, 0, 255)
+    green = (0, 255, 0)
+    prev = {
+        str(green): (None, None),
+        str(red): (None, None)
+    }
+
+    prev_thickness = {
+        str(green): 2,
+        str(red):  2
+    }
+
     #UC03
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
         server_sock.bind((HOST, PORT))
@@ -183,7 +208,6 @@ def init():
                     curr_image = received_data
                     
             mode = 'fill' if curr_image else 'free'
-            print(curr_image)
             background_image = None
             if mode == 'fill':
                 if curr_image:
@@ -222,11 +246,30 @@ def init():
                                     time.sleep(5)
                                     curr_image = None
                             elif mode == 'free':
-                                color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
+                                color = red if color_index == 0 else green
+                                if frame_cnt % FRAME_DIVISOR == 0:
+                                    (x, y) = prev[str(color)]
+                                    if x is None or y is None:
+                                        if color_index == 0:
+                                            last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                                        else:
+                                            last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
+                                        prev[str(color)] = (cx, cy)
+                                        continue
+                                        
+                                    dist = calculate_distance((cx, cy), prev[str(color)])
+                                    prev[str(color)] = (cx, cy)
+                                    if MAX_DIST - dist <= 0:
+                                        dist = 0
+                                    thickness = calculate_thickness(dist)
+                                    prev_thickness[str(color)] = int(thickness)
+
                                 if color_index == 0:
-                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color, thickness=prev_thickness[str(color)])
                                 else:
-                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
+                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color, thickness=prev_thickness[str(color)])
+
+            frame_cnt += 1
                                 
             cv2.imshow('Original', frame)
             cv2.imshow(canvas_window_name, canvas)
