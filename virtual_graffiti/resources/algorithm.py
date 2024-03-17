@@ -10,6 +10,7 @@ import importlib
 import math
 import os 
 import time
+from app.models import Laser, UserProfile
 import socket
 import threading
 
@@ -52,6 +53,8 @@ def color_segmentation(frame, lower_color, upper_color):
     return segmented_gray
 
 def load_scaled_image(image_path, width, height):
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'app'))
+    image_path = os.path.join(base_dir, image_path.lstrip('/'))
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     if image is None:
         raise ValueError("Image not found")
@@ -66,8 +69,26 @@ def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radiu
     mask_indices = np.where(mask > 0)
     canvas[mask_indices] = background_image[mask_indices]
 
+def laser_is_registered(color):
+    red = (0, 0, 255)
+    green = (0, 255, 0)
+    color_map = {
+        str(green): (None, None),
+        str(red): (None, None)
+    }
+    try:
+        laser = Laser.objects.get(color=color_map[color])
+    except Laser.DoesNotExist:
+        return False
+
+    try:
+        UserProfile.objects.get(laser=laser)
+        return True
+    except UserProfile.DoesNotExist:
+        return False
+
 def smooth_drawing(last_point, current_point, canvas, color=(0, 0, 255), thickness=2, distance_threshold=50):
-    if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold:
+    if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold and is_registered(color):
         cv2.line(canvas, last_point, current_point, color, thickness)
     return current_point
 
@@ -128,7 +149,7 @@ def init():
     FILL_THRESHOLD_PERCENT = 0.80
     HOST = 'localhost'
     PORT = 9999
-
+    curr_image = None
     #UC03
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
         server_sock.bind((HOST, PORT))
@@ -160,6 +181,7 @@ def init():
                 if not data_queue.empty():
                     received_data = data_queue.get()[1]
                     curr_image = received_data
+                    
             mode = 'fill' if curr_image else 'free'
             print(curr_image)
             background_image = None
@@ -197,6 +219,8 @@ def init():
                                     # Apply glitter effect before filling the entire image
                                     apply_glitter_effect(canvas, canvas_window_name, background_image)
                                     canvas[:, :] = background_image[:, :]
+                                    time.sleep(5)
+                                    curr_image = None
                             elif mode == 'free':
                                 color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
                                 if color_index == 0:
