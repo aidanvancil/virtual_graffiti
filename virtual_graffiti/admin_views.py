@@ -2,12 +2,12 @@ from django.shortcuts import render, redirect
 from django.views.decorators import gzip
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from subprocess import Popen
-from app.models import Image 
 from virtual_graffiti.resources import algorithm
 from django.utils import timezone
 import threading
 import cv2
 import json
+import socket
 import os
 
 def submit_image(request):
@@ -16,8 +16,14 @@ def submit_image(request):
         image_id = json_data['image_url']
         if image_id is None:
             return JsonResponse({'error': 'Invalid image submission.'}, status=400)
-        new_image = Image.objects.create(identifier=image_id, upload_date=timezone.now())
-        new_image.save()
+        
+        HOST = 'localhost'
+        PORT = 9999
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((HOST, PORT))
+        data = f"{image_id}"
+        sock.sendall(data.encode())
+        sock.close()
         return JsonResponse({'message': 'Image submitted successfully.'}, status=200)
     else:
         print(request)
@@ -39,14 +45,19 @@ def init(request):
         Popen(["python", "virtual_graffiti/resources/algorithm.py"])
     return redirect('admin_panel')
 
-def poll(request):
-    poll_thread = threading.Thread(target=poll)
-    poll_thread.start()
+def pull(request):
+    HOST = 'localhost'
+    PORT = 9999
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
+    data = 'pull'
+    sock.sendall(data.encode())
+    sock.close()
     return redirect('admin_panel')
 
 @gzip.gzip_page
 def video_feed(request):
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(2)
     cap.set(cv2.CAP_PROP_FPS, 60)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
