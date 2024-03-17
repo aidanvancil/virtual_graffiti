@@ -5,29 +5,25 @@ import random
 import cv2
 import threading
 import numpy as np
+from queue import PriorityQueue
 import importlib
+import math
 import os 
+import time
+from app.models import Laser, UserProfile
+import socket
+import threading
 
-def import_image_model():
-    try:
-        module = importlib.import_module("app.models")
-        ImageModel = getattr(module, "Image")
-        return ImageModel
-    except ImportError:
-        print("Error: Unable to import Image model")
-        return None
-    
-shared_curr_image = None
-image_lock = threading.Lock()
-Image = import_image_model()
-
-def delete_image_by_url(image_id):
-    try:
-        image = Image.objects.filter(identifier=image_id).first()
-        image.delete()
-        print(f"Image with id '{image_id}' deleted successfully.")
-    except Image.DoesNotExist:
-        print(f"Image with id '{image_id}' does not exist.")
+def handle_client_connection(conn, data_queue):
+    while True:
+        data = conn.recv(1024).decode()
+        if not data:
+            break
+        print("queued data:", data)
+        if data == 'pull':
+            data_queue.put((0, data))
+        else:
+            data_queue.put((1, data))
 
 def enumerate_cameras():
     index = 0
@@ -41,11 +37,13 @@ def enumerate_cameras():
         index += 1
     return arr
 
+def calculate_distance(point1, point2):
+    return math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
+
 #NFR6
 def is_laser_contour(contour, hsv_frame, min_area=20, max_area=200):
-    if not min_area < cv2.contourArea(contour) < max_area:
-        return False
-    return True
+    area = cv2.contourArea(contour)
+    return min_area < area < max_area
 
 def color_segmentation(frame, lower_color, upper_color):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -55,19 +53,44 @@ def color_segmentation(frame, lower_color, upper_color):
     return segmented_gray
 
 def load_scaled_image(image_path, width, height):
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'app'))
+    image_path = os.path.join(base_dir, image_path.lstrip('/'))
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
     if image is None:
         raise ValueError("Image not found")
     return cv2.resize(image, (width, height))
 
 #UC04
-def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=5):
+def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=25):
     scaled_x = int(x * scale_factor)
     scaled_y = int(y * scale_factor)
     mask = np.zeros(canvas.shape[:2], dtype=np.uint8)
     cv2.circle(mask, (scaled_x, scaled_y), radius, 255, -1)
     mask_indices = np.where(mask > 0)
     canvas[mask_indices] = background_image[mask_indices]
+
+def laser_is_registered(color):
+    red = (0, 0, 255)
+    green = (0, 255, 0)
+    color_map = {
+        str(green): (None, None),
+        str(red): (None, None)
+    }
+    try:
+        laser = Laser.objects.get(color=color_map[color])
+    except Laser.DoesNotExist:
+        return False
+
+    try:
+        UserProfile.objects.get(laser=laser)
+        return True
+    except UserProfile.DoesNotExist:
+        return False
+
+def smooth_drawing(last_point, current_point, canvas, color=(0, 0, 255), thickness=2, distance_threshold=50):
+    if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold and is_registered(color):
+        cv2.line(canvas, last_point, current_point, color, thickness)
+    return current_point
 
 def count_filled_pixels(canvas, background_image):
     filled_pixels = np.sum(np.any(canvas != [0, 0, 0], axis=2))
@@ -84,47 +107,36 @@ def apply_glitter_effect(canvas, canvas_window_name, background_image, iteration
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
 
-#UC12
-def poll():
-    global shared_curr_image
-    image_queue =  list(Image.objects.all().values_list('identifier', flat=True))
-    curr_image = image_queue.pop() if len(image_queue) else None
-    with image_lock:
-            shared_curr_image = curr_image
-    delete_image_by_url(curr_image) if curr_image is not None else None    
-
 #FR1, UC10
 def init():
-    global shared_curr_image
+    data_queue = PriorityQueue()
     camera_indexes = enumerate_cameras()
     if len(camera_indexes) == 0:
         print('No cameras found')
         return
     print('Camera found')
 
-    red_lower = np.array([0, 100, 100])
-    red_upper = np.array([10, 255, 255])
-    green_lower = np.array([40, 100, 100])
-    green_upper = np.array([80, 255, 255])
-    purple_upper = np.array([130, 50, 50])
-    purple_lower = np.array([160, 255, 255])
+    red_lower = np.array([160, 100, 100])
+    red_upper = np.array([190, 255, 255])
+    green_lower = np.array([50, 100, 100])
+    green_upper = np.array([70, 255, 255])
     
     cap_idx = camera_indexes[0]
     cap = cv2.VideoCapture(cap_idx, cv2.CAP_DSHOW)
     cap.set(cv2.CAP_PROP_FPS, 60)
-    screen_width = cap.get(3) 
-    screen_height = cap.get(4)
-    
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+    screen_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    screen_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     canvas_width, canvas_height = int(screen_width), int(screen_height)
+    scale_factor = min(canvas_width / screen_width, canvas_height / screen_height)
     
-    scale_factor_x = canvas_width / screen_width
-    scale_factor_y = canvas_height / screen_height
-    scale_factor = min(scale_factor_x, scale_factor_y)
-
     canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
     canvas_window_name = 'Canvas'
     
     cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
+    last_point_red = None
+    last_point_green = None
     
     monitors = get_monitors()
     if len(monitors) > 1:
@@ -135,67 +147,100 @@ def init():
     cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     FILL_THRESHOLD_PERCENT = 0.80
-
-    with image_lock:
-            curr_image = shared_curr_image
-    mode = 'fill' if curr_image else 'free'
-    background_image = None
-    if mode == 'fill':
-        if curr_image:
-            background_image = load_scaled_image(curr_image, canvas_width, canvas_height)
-            background_image = background_image[:, :, :3]
-        else:
-            JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
+    HOST = 'localhost'
+    PORT = 9999
+    curr_image = None
     #UC03
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Failed to capture frame.")
-            break
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
+        server_sock.bind((HOST, PORT))
+        server_sock.listen()
+        server_sock.setblocking(False)
 
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        red_segmented = color_segmentation(frame, red_lower, red_upper)
-        green_segmented = color_segmentation(frame, green_lower, green_upper)
-        purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
-
-        # Process for both rgb lasers in both modes
-        for color_index, segmented in enumerate([red_segmented, green_segmented, purple_segmented]):
-            contours, _ = cv2.findContours(segmented, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            for contour in contours:
-                if is_laser_contour(contour, hsv_frame):
-                    moments = cv2.moments(contour)
-                    if moments["m00"] != 0:
-                        cx = int(moments["m10"] / moments["m00"])
-                        cy = int(moments["m01"] / moments["m00"])
-
-                        if mode == 'fill' and background_image is not None:
-                            update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
-
-                            filled_pixels, total_pixels = count_filled_pixels(canvas, background_image)
-                            fill_percentage = filled_pixels / total_pixels
-
-                            if fill_percentage >= FILL_THRESHOLD_PERCENT:
-                                # Apply glitter effect before filling the entire image
-                                apply_glitter_effect(canvas, canvas_window_name, background_image)
-                                # Fill in the entire image
-                                canvas[:, :] = background_image[:, :]
-                        elif mode == 'free':
-                            color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
-                            cv2.circle(canvas, (cx, cy), 2, color, -1)
-                            
-        cv2.imshow('Original', frame)
-        cv2.imshow(canvas_window_name, canvas)
-                
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            absolute_path = os.path.abspath('./../virtual_graffiti/virtual_graffiti/temp/reset_signal.txt')
+        print("Waiting for connection...")
+        while True:
+            
             try:
-                with open(absolute_path, 'w') as f:
-                        f.seek(0)
-                        f.write('1')
+                conn, addr = server_sock.accept()
+                print("Connected by", addr)
+                client_thread = threading.Thread(target=handle_client_connection, args=(conn, data_queue))
+                client_thread.start()
+
+            except BlockingIOError:
+                pass
+
             except Exception as e:
-                print(e)
-            break
+                print("Error:", e)
+            
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Failed to capture frame.")
+                break
+
+            if not data_queue.empty() and data_queue.queue[0][1] == 'pull':
+                data_queue.get()
+                if not data_queue.empty():
+                    received_data = data_queue.get()[1]
+                    curr_image = received_data
+                    
+            mode = 'fill' if curr_image else 'free'
+            print(curr_image)
+            background_image = None
+            if mode == 'fill':
+                if curr_image:
+                    background_image = load_scaled_image(curr_image, canvas_width, canvas_height)
+                    background_image = background_image[:, :, :3]
+                else:
+                    JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
+
+            hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            red_segmented = color_segmentation(frame, red_lower, red_upper)
+            green_segmented = color_segmentation(frame, green_lower, green_upper)
+            #purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
+
+            # Process for both rgb lasers in both modes
+            for color_index, segmented in enumerate([red_segmented, green_segmented]): #, purple_segmented]):
+                contours, _ = cv2.findContours(segmented, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                for contour in contours:
+                    if is_laser_contour(contour, hsv_frame):
+                        moments = cv2.moments(contour)
+                        if moments["m00"] != 0:
+                            cx = int(moments["m10"] / moments["m00"])
+                            cy = int(moments["m01"] / moments["m00"])
+                            current_point = (cx, cy)
+
+                            if mode == 'fill' and background_image is not None:
+                                update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
+
+                                filled_pixels, total_pixels = count_filled_pixels(canvas, background_image)
+                                fill_percentage = filled_pixels / total_pixels
+
+                                if fill_percentage >= FILL_THRESHOLD_PERCENT:
+                                    # Apply glitter effect before filling the entire image
+                                    apply_glitter_effect(canvas, canvas_window_name, background_image)
+                                    canvas[:, :] = background_image[:, :]
+                                    time.sleep(5)
+                                    curr_image = None
+                            elif mode == 'free':
+                                color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
+                                if color_index == 0:
+                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                                else:
+                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
+                                
+            cv2.imshow('Original', frame)
+            cv2.imshow(canvas_window_name, canvas)
+                    
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                absolute_path = os.path.abspath('./../virtual_graffiti/virtual_graffiti/temp/reset_signal.txt')
+                try:
+                    with open(absolute_path, 'w') as f:
+                            f.seek(0)
+                            f.write('1')
+                except Exception as e:
+                    print(e)
+                break
+        conn.close()
             
 
     cap.release()
