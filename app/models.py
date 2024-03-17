@@ -25,11 +25,4 @@ class UserProfile(models.Model):
     laser = models.ForeignKey(Laser, on_delete=models.SET_NULL, null=True)
 
     class Meta:
-        app_label = 'app'        
-
-class Image(models.Model):
-    identifier = models.CharField(max_length=255)
-    upload_date = models.DateTimeField(auto_now_add=True)
-    class Meta:
-        app_label = 'app'   
-        ordering = ['-upload_date']
+        app_label = 'app'
