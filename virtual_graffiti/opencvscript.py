@@ -1,66 +1,9 @@
-'''
-import cv2
-import numpy as np
-
-def enumerate_cameras():
-    index = 0
-    while True:
-        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-        if not cap.read()[0]:
-            break
-        cap.release()
-        index += 1
-
-    return index
-
-
-if __name__ == "__main__":
-    camera_index = enumerate_cameras()
-
-    if camera_index == 0:
-        print("No cameras found.")
-    else:
-        print(f"Number of available cameras: {camera_index}")
-
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-
-        # Define color ranges for red and green lasers (adjust these based on your laser colors)
-        lower_red = np.array([0, 100, 100])
-        upper_red = np.array([10, 255, 255])
-        lower_green = np.array([40, 100, 100])
-        upper_green = np.array([80, 255, 255])
-
-        # Set up canvas window
-        canvas_width, canvas_height = 800, 600
-        canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
-        canvas_window_name = 'Canvas'
-        cv2.namedWindow(canvas_window_name)
-
-        while True:
-            ret, frame = cap.read()
-
-            if not ret:
-                print("Error: Failed to capture frame.")
-                break
-
-
-            # Display the original frame, red laser edges, green laser edges, and canvas
-            cv2.imshow('Original', frame)
-            cv2.imshow(canvas_window_name, canvas)
-
-            # Break the loop if 'q' key is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-        
-'''
 import cv2
 import numpy as np
 from screeninfo import get_monitors
 import random
 import math
+import time
 
 # Optimized Euclidean distance calculation
 def calculate_distance(point1, point2):
@@ -123,6 +66,9 @@ def apply_glitter_effect(canvas, background_image, iterations=400, intensity=600
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
 
+def clear_canvas(canvas):
+    canvas[:, :] = 0
+
 if __name__ == "__main__":
     red_lower = np.array([160, 100, 100])
     red_upper = np.array([190, 255, 255])
@@ -139,7 +85,8 @@ if __name__ == "__main__":
         print("No cameras found.")
         exit()
 
-    cap = cv2.VideoCapture(camera_indexes[1], cv2.CAP_DSHOW) 
+    # Use the most suitable camera index for your setup
+    cap = cv2.VideoCapture(camera_indexes[0], cv2.CAP_DSHOW)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
     screen_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -164,6 +111,12 @@ if __name__ == "__main__":
 
     FILL_THRESHOLD_PERCENT = .75
 
+    # Define clear area parameters
+    clear_area_center = (50, 50)  
+    clear_area_size = (50, 50) 
+    clear_area_rect = [clear_area_center[0] - clear_area_size[0] // 2, clear_area_center[1] - clear_area_size[1] // 2, clear_area_size[0], clear_area_size[1]]
+    clear_area_start_time = None  # To track how long the laser stays within the clear area
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -183,18 +136,22 @@ if __name__ == "__main__":
                         cy = int(moments["m01"] / moments["m00"])
                         current_point = (cx, cy)
 
+                        # Check if current_point is within the clear area
+                        if clear_area_rect[0] <= cx <= clear_area_rect[0] + clear_area_rect[2] and clear_area_rect[1] <= cy <= clear_area_rect[1] + clear_area_rect[3]:
+                            if clear_area_start_time is None:
+                                clear_area_start_time = time.time()
+                            elif time.time() - clear_area_start_time >= 3:  # Laser has been in the clear area for 3 seconds
+                                clear_canvas(canvas)
+                                clear_area_start_time = None  # Reset the timer
+                        else:
+                            clear_area_start_time = None  # Reset the timer if the laser moves out of the clear area
+
                         if mode == 'fill' and background_image is not None:
                             update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
-
-
                             filled_pixels, total_pixels = count_filled_pixels(canvas, background_image)
                             fill_percentage = filled_pixels / total_pixels
-
-
                             if fill_percentage >= FILL_THRESHOLD_PERCENT:
-                                # Apply glitter effect before filling the entire image
                                 apply_glitter_effect(canvas, background_image)
-                                # Fill in the entire image
                                 canvas[:, :] = background_image[:, :]
                         elif mode == 'free':
                             color = (0, 0, 255) if color_index == 0 else (0, 255, 0)
@@ -203,10 +160,26 @@ if __name__ == "__main__":
                             else:
                                 last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
 
+        # Draw the clear area for visual feedback
+        cv2.rectangle(canvas, (clear_area_rect[0], clear_area_rect[1]), (clear_area_rect[0] + clear_area_rect[2], clear_area_rect[1] + clear_area_rect[3]), (255, 255, 255), 2)
+                
+        # Add "clear" text inside the clear area
+        font_scale = 0.5
+        font_thickness = 1
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        text_size = cv2.getTextSize("clear", font, font_scale, font_thickness)[0]
+        text_x = clear_area_rect[0] + (clear_area_rect[2] - text_size[0]) // 2
+        text_y = clear_area_rect[1] + (clear_area_rect[3] + text_size[1]) // 2
+        cv2.putText(canvas, "clear", (text_x, text_y), font, font_scale, (255, 255, 255), font_thickness)
+
         cv2.imshow('Original', frame)
         cv2.imshow(canvas_window_name, canvas)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+        elif key == ord('c'):  # Clear canvas if 'c' is pressed
+            clear_canvas(canvas)
 
     cap.release()
     cv2.destroyAllWindows()
