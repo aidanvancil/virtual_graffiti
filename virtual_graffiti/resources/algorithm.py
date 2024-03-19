@@ -58,7 +58,7 @@ def load_scaled_image(image_path, width, height):
     return cv2.resize(image, (width, height))
 
 #UC04
-def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=25):
+def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=140):
     scaled_x = int(x * scale_factor)
     scaled_y = int(y * scale_factor)
     mask = np.zeros(canvas.shape[:2], dtype=np.uint8)
@@ -96,13 +96,27 @@ def count_filled_pixels(canvas, background_image):
 
 def calculate_thickness(dist):
     thickness = 24
-    if 25 <= dist < 50:
+    if 12 <= dist < 25:
+        thickness = 22
+    elif 25 <= dist < 37:
+        thickness = 20
+    elif 37 <= dist < 49:
+        thickness = 18
+    elif 49 <= dist < 61:
         thickness = 16
-    elif 50 <= dist < 75:
+    elif 61 <= dist < 73:
+        thickness = 14
+    elif 73 <= dist < 85:
+        thickness = 12
+    elif 85 <= dist < 97:
+        thickness = 10
+    elif 97 <= dist < 109:
         thickness = 8
-    elif 75 <= dist < 150:
+    elif 109 <= dist < 121:
+        thickness = 6
+    elif 121 <= dist < 133:
         thickness = 4
-    elif 150 <= dist:
+    elif 133 <= dist:
         thickness = 2
     return thickness
 
@@ -115,6 +129,10 @@ def apply_glitter_effect(canvas, canvas_window_name, background_image, iteration
                 canvas[y, x] = background_image[y, x]
         cv2.imshow(canvas_window_name, canvas)
         cv2.waitKey(delay)
+
+
+def clear_canvas(canvas):
+    canvas[:, :] = 0
 
 #FR1, UC10
 def init():
@@ -162,7 +180,10 @@ def init():
     HOST = 'localhost'
     PORT = 9999
     curr_image = None
-
+    clear_area_center = (50, 50)  
+    clear_area_size = (50, 50) 
+    clear_area_rect = [clear_area_center[0] - clear_area_size[0] // 2, clear_area_center[1] - clear_area_size[1] // 2, clear_area_size[0], clear_area_size[1]]
+    clear_area_start_time = None
     red = (0, 0, 255)
     green = (0, 255, 0)
     prev = {
@@ -233,6 +254,15 @@ def init():
                             cy = int(moments["m01"] / moments["m00"])
                             current_point = (cx, cy)
 
+                            if clear_area_rect[0] <= cx <= clear_area_rect[0] + clear_area_rect[2] and clear_area_rect[1] <= cy <= clear_area_rect[1] + clear_area_rect[3]:
+                                if clear_area_start_time is None:
+                                    clear_area_start_time = time.time()
+                                elif time.time() - clear_area_start_time >= 1.5:  # Laser has been in the clear area for 3 seconds
+                                    clear_canvas(canvas)
+                                    clear_area_start_time = None  # Reset the timer
+                            else:
+                                clear_area_start_time = None  # Reset the timer if the laser moves out of the clear area
+
                             if mode == 'fill' and background_image is not None:
                                 update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
 
@@ -271,10 +301,25 @@ def init():
 
             frame_cnt += 1
                                 
+
+            
+            # Draw the clear area for visual feedback
+            cv2.rectangle(canvas, (clear_area_rect[0], clear_area_rect[1]), (clear_area_rect[0] + clear_area_rect[2], clear_area_rect[1] + clear_area_rect[3]), (255, 255, 255), 2)
+                    
+            # Add "clear" text inside the clear area
+            font_scale = 0.5
+            font_thickness = 1
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            text_size = cv2.getTextSize("clear", font, font_scale, font_thickness)[0]
+            text_x = clear_area_rect[0] + (clear_area_rect[2] - text_size[0]) // 2
+            text_y = clear_area_rect[1] + (clear_area_rect[3] + text_size[1]) // 2
+            cv2.putText(canvas, "clear", (text_x, text_y), font, font_scale, (255, 255, 255), font_thickness)
+            
             cv2.imshow('Original', frame)
             cv2.imshow(canvas_window_name, canvas)
                     
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
                 absolute_path = os.path.abspath('./../virtual_graffiti/virtual_graffiti/temp/reset_signal.txt')
                 try:
                     with open(absolute_path, 'w') as f:
@@ -283,6 +328,8 @@ def init():
                 except Exception as e:
                     print(e)
                 break
+            elif key == ord('c'):  # Clear canvas if 'c' is pressed
+                clear_canvas(canvas)
         conn.close()
             
 
