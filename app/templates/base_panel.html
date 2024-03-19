@@ -24,19 +24,25 @@
 </head>
 
 <body 
-    class="overflow-hidden"
-    style="{% if gradient %}background: linear-gradient(to bottom, {{from_gradient}}, {{to_gradient}}); {% endif %}"
+    class="overflow-hidden bg-black"
 >
 
-<nav class="bg-[#434343] text-white p-4 w-full flex items-center justify-between">
-    <button class="mx-4 py-3 px-7 bg-black text-white font-bold text-3xl rounded-full"><a href="/">V/G</a></button>
+<nav class="bg-[#46225a] text-white p-2 w-full flex items-center justify-between">
+    <div class="ml-[2.5%] flex">
+        <div class="flex">
+            <a href="/" class="space-x-5 flex items-center text-xl">
+                <img src="{% static 'site/logo.png' %}" alt="" style="width: 10%;">
+                <div class="font-bold">Virtual Graffiti</div>
+            </a>
+        </div>
+    </div>
     
-    <div class="flex items-center space-x-4  font-bold">
-        {% if range|length != 0 %} <button class="hidden sm:block {% if users %} md:bg-[#636363] {% endif %} bg-[#181818] py-3 px-7   text-white rounded-full hover:text-gray-700"><a href="/register">Register User </a></button> {% endif %}
+    <div class="flex items-center space-x-4 font-bold">
+        {% if range|length != 0 %} <button class="hidden sm:block {% if users %} hover:bg-[#161a20] {% endif %} hover:bg-[#181818] py-3 px-7 text-white rounded-lg bg-transparent duration-300 text-xl"><a href="/register">Register User </a></button> {% endif %}
         {% if users %}
-            <button id="openSidebarBtn" class="hidden md:block py-3 px-7 bg-[#181818] text-white rounded-full hover:text-gray-500">Settings</button>
+            <button id="openSidebarBtn" class="hidden md:block py-3 px-7 text-white rounded-lg hover:bg-[#181818] duration-300 text-xl">Settings</button>
         {% endif %}
-        <button class="py-3 px-7 bg-[#636363] text-white rounded-full hover:text-gray-700"><a href="/logout">Log Out</a></button>
+        <button class="py-3 px-7 bg-[#636363] text-white rounded-lg hover:bg-[#181818] bg-transparent duration-300 text-xl"><a href="/logout">Log Out</a></button>
     </div>
 </nav>
 
@@ -44,7 +50,7 @@
 <div id="sidebar" 
     class="fixed top-0 right-0 h-1/5 bg-[#181818] p-4 transition-transform ease-in-out duration-300 rounded-lg hidden border border-gray-500 lg:border-none md:block md:w-4/5 md:h-1/3 lg:w-2/5 xl:w-[22.5%] lg:h-1/2"
     style="transform: translateX(100%);">    <button id="closeSidebarBtn" class="font-bold text-4xl text-white hover:text-gray-700">></button>
-    <div class="font-bold text-4xl text-white underline text-center">Settings</div>
+    <div class="font-bold text-4xl text-white underline text-center hover:bg-[#1d2228] duration-300">Settings</div>
 
     <div class="text-white text-center flex lg:flex-col justify-end my-auto items-center mt-5 ml-[5%]">
         

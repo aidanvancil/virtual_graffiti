@@ -16,26 +16,26 @@
 
 {% block content %}
 <div class="flex items-center justify-center h-screen mt-[-5vh] text-center">
-    <div class="sm:w-1/2 hidden sm:flex items-center justify-center"> <!-- Left section -->
-        <div class="h-[80vh] w-11/12 rounded-xl flex flex-col items-center justify-center">
-            <div class="h-full w-11/12 rounded-xl flex items-center justify-center mx-auto my-auto">
-                <div class="h-[95%] w-[95%]  rounded-xl flex items-start justify-center">
-                    <div id="imageCarousel" class="splide w-4/5 mx-auto rounded-xl p-2 bg-white mt-[2.5%]">
+    <div class="sm:w-1/2 hidden sm:flex items-center justify-center flex-col"> <!-- Left section -->
+        <div class="w-full rounded-lg flex flex-col items-center justify-center mt-[-8vh]">
+            <div class="h-full w-full rounded-lg flex items-center justify-center mx-auto my-auto">
+                <div class="h-[90%] w-full  rounded-lg flex items-start justify-center">
+                    <div id="imageCarousel" class="splide w-4/5 mx-auto rounded-lg p-2 bg-white mt-[2.5%]">
                         <div class="splide__arrows flex justify-between">
-                            <button class="splide__arrow splide__arrow--prev bg-white opacity-100 w-auto px-3 rounded-md transition duration-300 ease-in-out transform hover:scale-110">
+                            <button class="splide__arrow splide__arrow--prev text-[#9843cd] bg-white font-bold opacity-100 w-auto px-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-110">
                                 Prev
                             </button>
-                            <button class="splide__arrow splide__arrow--next bg-white opacity-100 w-auto px-3 rounded-md transition duration-300 ease-in-out transform hover:scale-110">
+                            <button class="splide__arrow splide__arrow--next text-[#9843cd] bg-white font-bold opacity-100 w-auto px-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-110">
                                 Next
                             </button>
                         </div>
                         <div class="splide__track">
                             <ul class="splide__list">
                                 {% for image in images %}
-                                    <li class="splide__slide rounded-xl relative">
+                                    <li class="splide__slide rounded-lg relative">
                                         <img src="{% static 'media/' %}{{ image }}" alt="Image" class="">
                                         {% if init %}
-                                        <button id="submit-button" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-md transition duration-300 ease-in-out transform hover:scale-110"
+                                        <button id="submit-button" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-lg transition duration-300 ease-in-out transform hover:scale-110"
                                             data-image-url="{% static 'media/' %}{{ image }}">
                                             <span class="">Submit to Queue</span>
                                         </button>
@@ -48,16 +48,26 @@
                 </div>
             </div>
         </div>
+        <div class="flex justify-center flex-col space-y-5 mt-10 font-semibold"> <!-- Metrics squares container -->
+            <div class="flex space-x-5">
+                <div class="px-32 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+                <div class="px-32 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+            </div>
+            <div class="flex space-x-5">
+                <div class="px-32 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+                <div class="px-32 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+            </div>
+        </div>
     </div>
     <div class="w-full h-[80vh] sm:w-1/2 flex flex-col"> <!-- Right section -->
         
-        <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center justify-between mx-auto"> <!-- Top 1/3 -->
-            <div class="bg-[#636363] rounded-full px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 lg:text-2xl xl:text-4xl hover:text-gray-700">Debug 📷</div>
-            <a href="{% if init %} {% url 'pull'%} {% else %} {% url '_init'%} {% endif %}" class="bg-[#636363] rounded-full px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 lg:text-2xl xl:text-4xl hover:text-gray-700">{% if init %}Start Img 📝{% else %}Start ✅{% endif %}</a>
+        <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
+            <div class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div>
+            <a href="{% if init %} {% url 'pull'%} {% else %} {% url '_init'%} {% endif %}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">{% if init %}Fill Mode {% else %}Start / Callibrate{% endif %}</a>
         </div>
 
         <div id="middle_third" class="sm:h-[37.5%] h-1/2 w-full flex justify-center items-center mx-auto mb-4 mt--4"> <!-- Middle 1/3 -->
-            <div class="h-[100%] bg-[#C4C4C4] rounded-lg w-11/12 flex sm:text-sm md:text-base lg:text-lg justify-center p-2">
+            <div class="h-[100%] bg-[#0b0d10] border-2 border-[#1c2127] rounded-lg w-11/12 flex sm:text-sm md:text-base lg:text-lg justify-center p-2">
                 {% if video_feed and init %}
                 <div id="videoModal" class="hidden fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-75 items-center justify-center z-10">
                     <div class="flex items-center justify-center w-full h-full">
@@ -84,33 +94,33 @@
         
 
         <div id="bottom_third" class="hidden h-auto my-2 mx-auto rounded-lg text-white text-lg w-11/12 sm:block"> <!-- Bottom 1/3 -->
-            <div class="rounded-lg bg-[#434343] items-center mx-auto p-3 justify-between">
-                <div class="underline text-3xl font-bold mb-4">Connections</div>
+            <div class="rounded-lg bg-gray-700 bg-opacity-40  text-[#9843cd] items-center mx-auto p-3 justify-between">
+                <div class="text-xl font-bold mb-4">Connections</div>
                 {% if users %}
                     {% for user in users %}
-                        <div class="flex items-center bg-[#636363] font-bold text-lg rounded h-2/3 mb-2">
-                            <div class="flex-grow"> {{ user.first_name }}_{{ user.last_name }}'s 
+                        <div class="flex items-center bg-gray-700 bg-opacity-30 text-md text-white rounded h-2/3 mb-2">
+                            <div class="flex-grow"> <span class="font-semibold"> {{ user.first_name }}_{{ user.last_name }}'s </span> 
                                 <span class="
                                         {% if user.laser.id == 'Green' %}text-green-500
                                         {% elif user.laser.id == 'Purple' %}text-purple-500
                                         {% elif user.laser.id == 'Red' %}text-red-500
                                         {% else %}bg-gray-500
-                                        {% endif %}">{{ user.laser.id }} Laser
-                                </span> 🔦
+                                        {% endif %}">{{ user.laser.id|lower }} laser
+                                </span>
                             </div>
-                            <a href="{% url 'disconnect_user' first_name=user.first_name last_name=user.last_name %}" class="text-sm m-2 px-2 bg-red-600 rounded-full">Disconnect</a>
+                            <a href="{% url 'disconnect_user' first_name=user.first_name last_name=user.last_name %}" class="text-sm m-2 px-2 bg-[#9843cd] text-white rounded-lg font-bold"><span class="hover:opacity-80">Disconnect</span></a>
                         </div>
                     {% endfor %}
                 {% endif %}
             
                 {% for x in range %}
-                    <div class="lg:flex items-center bg-[#636363] font-bold text-lg rounded h-2/3 animate-pulse mb-2 hidden"> 
+                    <div class="lg:flex items-center bg-gray-800 bg-opacity-50 font-bold text-lg rounded h-2/3 animate-pulse mb-2 hidden"> 
                         <div class="w-full md:w-2/3 mb-2 md:mb-0 md:mr-4">
-                            <div class="p-1 m-[0.4rem] h-1/3 w-full md:w-2/3 mb-2 bg-gradient-to-r from-[#838383] via-[#B0B0B0] to-[#838383] rounded animate-pulse"></div>
-                            <div class="p-1 m-[0.4rem] h-1/3 w-full md:w-1/2 bg-gradient-to-r from-[#838383] via-[#B0B0B0] to-[#838383] rounded animate-pulse"></div>
+                            <div class="p-1 m-[0.4rem] h-1/3 w-full md:w-2/3 mb-2 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-800 opacity-60 rounded animate-pulse"></div>
+                            <div class="p-1 m-[0.4rem] h-1/3 w-full md:w-1/2 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-800 opacity-60 rounded animate-pulse"></div>
                         </div>
                         <div class="flex-grow"></div>
-                        <button class="text-sm px-2 m-2 bg-red-600 rounded-full blur-sm">Disconnect</button>
+                        <button class="text-sm px-2 m-2 bg-[#9843cd] text-white rounded-lg blur-sm">Disconnect</button>
                     </div>
                 {% endfor %}
             </div>
