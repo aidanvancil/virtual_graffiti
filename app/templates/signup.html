@@ -11,20 +11,22 @@
 {% endcomment %}
 
 {% block content %}
-<div class="flex items-center justify-center h-screen mt-[-5vh]">
-    <div class="p-5 px-5 w-full md:w-2/3 lg:w-1/2 xl:w-1/3 h-auto bg-black rounded-lg flex flex-col items-center">
+<div class="flex justify-center h-screen {% if not qr_code_base64 %}mt-20{% endif %}">
+    <div class="p-5 px-5 w-full md:w-2/3 lg:w-1/2 xl:w-1/3 {% if not qr_code_base64 %}h-2/3{% else %}h-4/5{% endif %} bg-[#46225a] rounded-lg flex flex-col items-center">
         <div class="p-5 px-5 w-full h-full bg-[#777777] rounded-lg flex flex-col items-center text-white font-bold">
             <h1 class="text-center underline text-3xl md:text-5xl animate-fade-up animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out animate-normal">Registration</h1>
 
             {% if qr_code_base64 %}
-            <p class="md:mt-8 max-w-sm text-center sm:mt-2 m-2">Thanks for registering, scan the QR to customize your soon-to-be-given laser!</p>
-            <div class="flex flex-col items-center justify-center w-full">
-                <div class="w-2/3 flex items-center justify-center">
-                    <img class="w-full max-w-[300px] md:scale-[0.6] lg:scale-[0.75] xl:scale-100 rounded-xl" src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+            <p class="max-w-sm text-center m-2 animate-fade-up animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out animate-normal">Thanks for registering, scan the QR to customize your soon-to-be-given laser!</p>
+            <div class="flex flex-col items-center justify-center space-y-5">
+                <div class="flex items-center justify-center animate-fade-up animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out animate-normal">
+                    <img class="w-full max-w-[300px] md:scale-[0.6] lg:scale-[0.75] xl:scale-100 rounded-lg" src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
                 </div>
-                <button class="mt-4 sm:px-8 sm:h-14 px-4 h-7 md:m-4 text-xs sm:text-sm md:text-base lg:text-lg bg-[#181818] rounded-full transform transition-transform hover:scale-105">
-                    <a href="/admin_panel" class="">Back to Admin Panel</a>
-                </button>
+                <div>
+                    <button class="sm:px-8 sm:py-4 px-4 py-1 text-xs sm:text-sm md:text-base lg:text-lg bg-[#181818] rounded-lg animate-fade-up animate-once animate-duration-500 animate-delay-[400ms] animate-ease-in-out animate-normal">
+                        <a href="/admin_panel" class="">Back to Admin Panel</a>
+                    </button>
+                </div>
             </div>
             
             {% else %}
@@ -33,18 +35,18 @@
                     <div class="md:mt-5 lg:space-y-8 space-y-4">
                         <div class="mb-8 mt-8 flex space-x-4 justify-center animate-fade-up animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out animate-normal">
                             <label for="firstname">First Name:</label>
-                            <input class="w-11/12 md:w-1/2 rounded-md p-2 text-black" type="text" name="firstname" class="border rounded-md p-2" required>
+                            <input class="w-11/12 md:w-1/2 rounded-lg p-2 text-black" type="text" name="firstname" class="border rounded-lg p-2" required>
                         </div>
                         
                         <div class="mb-8 flex space-x-4 justify-center animate-fade-up animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out animate-normal">
                             <label for="firstname">Last Name:</label>
-                            <input class="w-11/12 md:w-1/2 rounded-md p-2 text-black" type="text" name="lastname" class="border rounded-md p-2" required>
+                            <input class="w-11/12 md:w-1/2 rounded-lg p-2 text-black" type="text" name="lastname" class="border rounded-lg p-2" required>
                         </div>
 
                         {% if available_lasers %}
                         <div class="sm:ml-7 ml-6 flex space-x-4 justify-center animate-fade-up animate-once animate-duration-500 animate-delay-[400ms] animate-ease-in-out animate-normal">
                             <label for="laser">Laser:</label>
-                            <select class="w-11/12 md:w-1/2 rounded-md p-2 text-black" name="laser" required>
+                            <select class="w-11/12 md:w-1/2 rounded-lg p-2 text-black" name="laser" required>
                                 {% for laser_color in available_lasers %}
                                     <option value="{{ laser_color }}">{{ laser_color }}</option>
                                 {% endfor %}
