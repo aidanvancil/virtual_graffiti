@@ -110,9 +110,6 @@ def signup(request):
 
         context = {
             'qr_code_base64': qr_code_base64,
-            'gradient': True,
-            'from_gradient': '#74EE15',
-            'to_gradient': '#F000FF',
         }
 
         return render(request, 'signup.html', context)\
@@ -120,9 +117,6 @@ def signup(request):
     else:  
         lasers_without_users = Laser.objects.filter(userprofile__isnull=True)
         context = {
-            'gradient': True,
-            'from_gradient': '#74EE15',
-            'to_gradient': '#F000FF',
             'available_lasers': list(lasers_without_users.values_list('id', flat=True))
         }
         
@@ -149,18 +143,11 @@ def login(request):
             error_message = "Username or password is incorrect."
             context = {
                 'error_message': error_message,
-                'gradient': True,
-                'from_gradient': '#74EE15',
-                'to_gradient': '#F000FF',
             }
             return render(request, 'login.html', context)
     
     
-    context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF'
-    }
+    context = {    }
     return render(request, 'login.html', context)
 
 @login_required(login_url='login')
@@ -182,9 +169,6 @@ def admin_panel(request):
         print(e)
         
     context = {
-        'gradient': True,
-        'from_gradient': '#FFE700',
-        'to_gradient': '#4DEEEA',
         'init': request.session.get('init', False),
         'video_feed': True,
         'users': UserProfile.objects.all(),
@@ -202,9 +186,6 @@ def admin_panel(request):
 
 def errors(request, error_code=404):
     context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF',
         'error_code': error_code
     }
     response = render(request, 'errors.html', context)
