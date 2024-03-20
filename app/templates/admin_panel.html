@@ -35,7 +35,7 @@
                                     <li class="splide__slide rounded-lg relative">
                                         <img src="{% static 'media/' %}{{ image }}" alt="Image" class="">
                                         {% if init %}
-                                        <button id="submit-button" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-lg transition duration-300 ease-in-out transform hover:scale-110"
+                                        <button id="submit-button" onclick="showNotification('Image submitted to queue')" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-lg transition duration-300 ease-in-out transform hover:scale-110"
                                             data-image-url="{% static 'media/' %}{{ image }}">
                                             <span class="">Submit to Queue</span>
                                         </button>
@@ -50,20 +50,24 @@
         </div>
         <div class="flex justify-center flex-col space-y-5 mt-10 font-semibold"> <!-- Metrics squares container -->
             <div class="space-x-5 hidden md:flex">
-                <div class="hidden lg:block xl:px-32 lg:px-20 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
-                <div class="xl:px-32 lg:px-20 md:px-14 px-8 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+                <div class="hidden lg:block xl:px-32 lg:px-20 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c]">Metrics</div>
+                <div class="xl:px-32 lg:px-20 md:px-14 px-8 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c]">Metrics</div>
             </div>
             <div class="space-x-5 hidden md:flex">
-                <div class="hidden lg:block xl:px-32 lg:px-20 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
-                <div class="xl:px-32 lg:px-20 md:px-14 px-8 py-4 rounded-lg bg-[#9843cd] text-white">Metrics</div>
+                <div class="hidden lg:block xl:px-32 lg:px-20 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c]">Metrics</div>
+                <div class="xl:px-32 lg:px-20 md:px-14 px-8 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c]">Metrics</div>
             </div>
         </div>
     </div>
     <div class="w-full h-[80vh] sm:w-1/2 flex flex-col"> <!-- Right section -->
         
         <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
-            <div class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div>
-            <a href="{% if init %} {% url 'pull'%} {% else %} {% url '_init'%} {% endif %}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">{% if init %}Fill Mode {% else %}Start / Callibrate{% endif %}</a>
+            <button onclick="showNotification('Debug mode activated')"><div class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
+            {% if init %}
+                <button><a href="{% url 'pull'%}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
+            {% else %}
+                <button onclick="showNotification('Image polled')"><a href="{% url '_init'%}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Start / Callibrate</a></button>
+            {% endif %}
         </div>
 
         <div id="middle_third" class="sm:h-[37.5%] h-1/2 w-full flex justify-center items-center mx-auto mb-4 mt--4"> <!-- Middle 1/3 -->
@@ -71,17 +75,17 @@
                 {% if video_feed and init %}
                 <div id="videoModal" class="hidden fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-75 items-center justify-center z-10">
                     <div class="flex items-center justify-center w-full h-full">
-                        <div class="rounded-lg bg-[#636363] p-6 flex justify-center w-1/2 h-9/32">
+                        <div class="rounded-lg bg-[#1c2127] p-3 flex justify-center w-1/2 h-9/32">
                             <img src="{% url 'video_feed' %}" class="w-11/12 h-2/3 rounded-lg"/>
                             <div class="flex items-center justify-center w-1/12">
-                                <div id="closeVideoModal" class="bg-[#181818] w-11/12 h-1/6 rounded-lg p-2 ml-3 flex justify-center items-center hover:bg-black">
-                                    <button class="text-white text-2xl m-4">&times;</button>
+                                <div id="closeVideoModal" class="bg-black rounded-lg p-3 mx-auto flex justify-center items-center hover:bg-gray-900 animate-fade-up animate-once animate-duration-300 animate-delay-[200ms] animate-ease-in-out animate-normal">
+                                    <button class="text-white text-2xl font-bold">&times;</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="rounded-lg bg-[#636363] p-4 flex justify-center w-11/12 sm:w-4/5 md:w-3/5 lg:w-1/2 {% if not video_feed %} animate-pulse {% endif %}">
+                <div class="rounded-lg p-4 flex justify-center w-11/12 sm:w-4/5 md:w-3/5 lg:w-1/2 {% if not video_feed %} animate-pulse {% endif %}">
                     <img id="openVideoModal" src="{% url 'video_feed' %}" class="w-full h-full sm:h-9/32 rounded-lg"/>
                 </div>
                 {% else %}
@@ -130,6 +134,28 @@
 </div>
 
 <script>
+    function showNotification(message) {
+        const notification = document.createElement('button');
+        notification.classList.add('absolute', 'top-[8%]', 'left-[40%]', 'm-4', 'p-4', 'bg-red-500', 'text-white', 'font-bold', 'rounded-lg', 'shadow-lg', 'opacity-0', 'transform', 'transition', 'duration-300', 'ease-in-out', 'hover:opacity-100');
+
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.remove('opacity-0', 'translate-y-0');
+            notification.classList.add('opacity-100', 'translate-y-[-50%]');
+        }, 100);
+
+        setTimeout(() => {
+            notification.classList.remove('opacity-100', 'translate-y-[-50%]');
+            notification.classList.add('opacity-0', 'translate-y-0');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         new Splide('#imageCarousel', {
             type: 'fade',
