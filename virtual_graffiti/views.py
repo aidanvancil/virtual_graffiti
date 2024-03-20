@@ -173,6 +173,10 @@ def admin_panel(request):
         'video_feed': True,
         'users': UserProfile.objects.all(),
         'range': [0] * (3 - UserProfile.objects.count()), #NFR4, FR4
+        'latency': 50,
+        'cpu_usage': 80,
+        'mem_usage': 60,
+        'video_frames': 60,
     } 
     
     IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
