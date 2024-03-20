@@ -39,9 +39,6 @@ def settings(request, user_identifier):
         return views.errors(request, error_code=500)
     
     context = {
-        'gradient': True,
-        'from_gradient': '#74EE15',
-        'to_gradient': '#F000FF',
         'first_name': user.first_name,
         'last_name': user.last_name,
         'laser_pointer': user.laser.id,

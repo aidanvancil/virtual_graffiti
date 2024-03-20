@@ -23,9 +23,6 @@ class TestSettingsView(TestCase):
             response = self.client.get(redirect_location)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["gradient"], True)
-        self.assertEqual(response.context["from_gradient"], "#74EE15")
-        self.assertEqual(response.context["to_gradient"], "#F000FF")
         self.assertEqual(response.context["first_name"], self.user.first_name)
         self.assertEqual(response.context["last_name"], self.user.last_name)
         self.assertEqual(response.context["laser_pointer"], self.user.laser.id)
