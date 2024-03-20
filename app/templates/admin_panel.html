@@ -17,7 +17,7 @@
 {% block content %}
 <div class="flex items-center justify-center h-screen mt-[-5vh] text-center">
     <div class="sm:w-1/2 hidden sm:flex items-center justify-center flex-col"> <!-- Left section -->
-        <div class="w-full rounded-lg flex flex-col items-center justify-center mt-[-8vh]">
+        <div class="w-full rounded-lg flex flex-col items-center justify-center">
             <div class="h-full w-full rounded-lg flex items-center justify-center mx-auto my-auto">
                 <div class="h-[90%] w-full  rounded-lg flex items-start justify-center">
                     <div id="imageCarousel" class="splide w-4/5 mx-auto rounded-lg p-2 bg-white mt-[2.5%]">
@@ -48,21 +48,33 @@
                 </div>
             </div>
         </div>
-        <div class="flex justify-center flex-col space-y-5 mt-10 font-semibold w-11/12"> <!-- Metrics squares container -->
+        <div id="metrics-container" class="hidden justify-center flex-col space-y-5 mt-10 mb-8 font-semibold w-11/12 h-4/5"> <!-- Metrics squares container -->
             <div class="space-x-5 hidden md:flex">
-                <div class="w-2/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"><p class="w-full">CPU: {{ cpu_usage }}</p></div>
-                <div class="w-3/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out"><p class="w-full">Memory: {{ mem_usage }}</p></div>
+                <button onclick="inverse('CPU')" class="w-2/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out metric-box" data-label="CPU">CPU</button>
+                <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
+                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                </div>
+                <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
+                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                </div>
+                <button  onclick="inverse('Memory')" class="w-3/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out metric-box" data-label="Memory">Memory</button>
             </div>
             <div class="space-x-5 hidden md:flex">
-                <div class="w-3/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out"><p class="w-full">Latency: {{ latency }}</p></div>
-                <div class="w-2/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[400ms] animate-ease-in-out"><p class="w-full">Frames: {{ video_frames }}</p></div>
+                <button  onclick="inverse('Latency')" class="w-3/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out metric-box" data-label="Latency">Latency</button>
+                <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
+                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                </div>
+                <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
+                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                </div>
+                <button onclick="inverse('Frames')" class="w-2/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[400ms] animate-ease-in-out metric-box" data-label="Frames">Frames</button>
             </div>
         </div>
     </div>
     <div class="w-full h-[80vh] sm:w-1/2 flex flex-col"> <!-- Right section -->
         
         <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
-            <button onclick="showNotification('Debug mode activated')"><div class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
+            <button onclick="toggleDebugMode()"><div id="debugButton" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
             {% if init %}
                 <button><a href="{% url 'pull'%}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
             {% else %}
@@ -134,6 +146,107 @@
 </div>
 
 <script>
+    let debugMode = false;
+    function toggleMetricsVisibility(debugMode) {
+        const metricsContainer = document.getElementById('metrics-container');
+        if (debugMode) {
+            metricsContainer.style.display = 'flex';
+        } else {
+            metricsContainer.style.display = 'none';
+        }
+    }
+
+    function toggleDebugMode() {
+        var debugButton = document.getElementById("debugButton");
+        debugButton.classList.toggle("bg-gray-700");
+        debugButton.classList.toggle("bg-opacity-40");
+        debugButton.classList.toggle("text-white")
+        debugButton.classList.toggle("text-[#9843cd]");
+        debugButton.classList.toggle("hover:text-[#6d3c8c]")
+        debugButton.classList.toggle("border-white")
+        debugButton.classList.toggle("border-2")
+        debugMode = !debugMode;
+        toggleMetricsVisibility(debugMode)
+
+        showNotification(debugMode ? 'Debug mode activated' : 'Debug mode deactivated');
+    }
+
+
+    function inverse(metricType) {
+        const metricBoxes = document.querySelectorAll('.metric-box');
+        const chartContainers = document.querySelectorAll('.chart-container');
+        const canvas = document.querySelectorAll('.chart-container canvas');
+        metricBoxes.forEach((box, index) => {
+            if (box.getAttribute('data-label') === metricType) {
+                const isActive = box.classList.contains('active');
+                if (!isActive) {
+                    metricBoxes.forEach((otherBox, otherIndex) => {
+                        if (otherIndex !== index) {
+                            otherBox.style.display = 'none';
+                        }
+                    });
+                    chartContainers.forEach(container => {
+                        container.style.display = 'none';
+                    });
+
+                    chartContainers[index].style.display = 'block';
+                    box.classList.add('active', 'font-bold', 'text-3xl');
+                    createChart(canvas[index], metricType);
+                } else {
+                    metricBoxes.forEach((otherBox, otherIndex) => {
+                        if (otherIndex !== index) {
+                            otherBox.style.display = 'block';
+                        }
+                    });
+                    chartContainers[index].style.display = 'none';
+                    box.classList.remove('active', 'font-bold', 'text-3xl');
+                }
+            }
+        });
+    }
+    
+    function createChart(canvas, metricType) {
+        let labels, data;
+        if (metricType === 'CPU') {
+            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
+            data = [65.9, 59.8, 80.3, 81.1, 56.1, 55.5, 40.3];
+        } else if (metricType === 'Memory') {
+            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
+            data = [45, 30, 60, 75, 50, 65, 55];
+        } else if (metricType === 'Latency') {
+            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
+            data = [100, 200, 300, 300, 200, 100, 100]; // Converted to milliseconds
+        } else if (metricType === 'Frames') {
+            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
+            data = [70, 75, 60, 65, 65, 35, 69];
+        }
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: metricType + ' Over Past Poll',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    data: data
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    }
+
+
+
     function showNotification(message) {
         const notification = document.createElement('button');
         notification.classList.add('absolute', 'top-[8%]', 'left-[40%]', 'm-4', 'p-4', 'bg-red-500', 'text-white', 'font-bold', 'rounded-lg', 'shadow-lg', 'opacity-0', 'transform', 'transition', 'duration-300', 'ease-in-out', 'hover:opacity-100');
