@@ -39,8 +39,8 @@
     </div>
     
     <div class="flex items-center space-x-4 font-bold">
-        {% if range|length != 0 %} <button class="hidden sm:block {% if users %} hover:bg-[#161a20] {% endif %} hover:bg-[#181818] py-3 px-7 text-white rounded-lg bg-transparent duration-300 text-xl"><a href="/register">Register User </a></button> {% endif %}
-        {% if users %}
+        {% if range|length != 0 and connected %} <button class="hidden sm:block {% if users %} hover:bg-[#161a20] {% endif %} hover:bg-[#181818] py-3 px-7 text-white rounded-lg bg-transparent duration-300 text-xl"><a href="/register">Register User </a></button> {% endif %}
+        {% if users and connected %}
             <button id="openSidebarBtn" class="hidden md:block py-3 px-7 text-white rounded-lg hover:bg-[#181818] duration-300 text-xl">Settings</button>
         {% endif %}
         <button class="py-3 px-7 bg-[#636363] text-white rounded-lg hover:bg-[#181818] bg-transparent duration-300 text-xl"><a href="/logout">Log Out</a></button>

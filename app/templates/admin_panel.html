@@ -35,7 +35,7 @@
                                     <li class="splide__slide rounded-lg relative">
                                         <img src="{% static 'media/' %}{{ image }}" alt="Image" class="">
                                         {% if init %}
-                                        <button id="submit-button" onclick="showNotification('Image submitted to queue')" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-lg transition duration-300 ease-in-out transform hover:scale-110"
+                                        <button id="submit-button" onclick="showNotification('Image submitted to queue', bgColor='bg-green-500')" class="text-xs md:text-sm lg:text-lg text-red-600 hover:font-bold absolute bottom-0 left-1/2 bg-white -translate-x-1/2 mb-2 lg:px-3 lg:py-1 sm:px-2 py-0 rounded-lg transition duration-300 ease-in-out transform hover:scale-110"
                                             data-image-url="{% static 'media/' %}{{ image }}">
                                             <span class="">Submit to Queue</span>
                                         </button>
@@ -76,10 +76,39 @@
         <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
             <button onclick="toggleDebugMode()"><div id="debugButton" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
             {% if init %}
-                <button><a href="{% url 'pull'%}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
+                <button><a href="{% url 'pull'%}" class="block bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
             {% else %}
-                <button onclick="showNotification('Program initializing')"><a href="{% url '_init'%}" class="bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Start / Calibrate</a></button>
+                <button onclick="showNotification('Program initializing', bgColor='bg-green-500')"><a href="{% url '_init'%}" class="block bg-gray-700 bg-opacity-40 text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 xl:px-8 hover:text-gray-700">Calibrate</a></button>
             {% endif %}
+            <div class="hidden lg:flex flex-grow"></div>
+            <!-- Information button -->
+            <d id="informaticWindow" class="hidden text-[#9843cd] font-bold text-lg">
+                <div id="informatic" class="bg-[#9843cd] text-white rounded-lg flex">
+                    <button onclick="{% if connected %}window.location.href='{% url 'del_code' %}'{% else %}transitionIntoInput(){% endif %}" id="informaticOriginal" class="px-10 py-4 sm:py-2 md:px-6 md:py-3 lg:py-4 lg:px-8 flex">
+                        <p class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out hover:text-[#6d3c8c]">Go {% if connected %}Offline{% else %}Online{% endif %}</p>
+                        <div id="informaticButtonOG" class="cursor-pointer rounded-full bg-gray-200 w-5 h-5 p-2 xl:flex hidden items-center justify-center ml-4 mr-[-1vw] hover:opacity-50">
+                            <i class="text-[#9843cd] text-[0.75rem]">i</i>
+                        </div>
+                    </button>
+                    <div id="codeBox" class="hidden ml-4 mr-1 space-x-5 items-center py-[0.12rem]">
+                        <input type="text" id="codeInput" class="w-1/3 rounded-lg border text-black m-2 text-center animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out" maxlength="5" placeholder="Enter code">
+                        <button id="codeSubmit" class="bg-[#161a20] text-[#9843cd] rounded-lg px-2 py-1 m-1 hover:text-gray-700 animate-fade-right animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out">Submit</button>
+                        <button id="cancelInput" class="bg-[#9843cd] text-white hover:text-[#9843cd] rounded-lg px-2 py-1 m-1 hover:bg-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out">Cancel</button>
+                    </div>
+                    <div id="informaticChanged" class="hidden leading-none py-2 pr-6 pl-2 h-1/4 w-full text-left font-light">
+                        <div class="flex-col">
+                            <h3 class="text-sm text-center mb-1 font-bold"><span class="underline">Status:</span>{% if connected %}<span class="text-green-400"> Online</span>{% else %}<span class="text-red-500"> Offline</span>{% endif %}</h3>
+                            <p class="text-[0.55rem]">With an internet connect feel free to connect online. This <a href="https://virtual-graffiti-box.onrender.com/" target="_blank"><i class="underline font-medium">link</i></a> will redirect to a website that provides a code. Upon inputting the code and submitting, your private instance will be connected, enabling the following features:</p>
+                            <ul class="text-[0.55rem] list-disc text-left ml-[20%] mt-2">
+                                <li>User Registration, User Settings, Admin-User Controls</li>
+                            </ul> 
+                        </div>
+                        <div id="informaticButton" onclick="toggleInfoText()" class="cursor-pointer font-bold rounded-full bg-gray-200 w-5 h-5 p-2 xl:flex hidden items-center justify-center mr-[-1vw] ml-[-20px] hover:opacity-50">
+                            <p class="text-[#9843cd] text-[0.75rem]">X</p>
+                        </div>
+                    </div>
+                </div>
+            </d>
         </div>
 
         <div id="middle_third" class="sm:h-[37.5%] h-1/2 w-full flex justify-center items-center mx-auto mb-4 mt--4"> <!-- Middle 1/3 -->
@@ -147,6 +176,7 @@
 
 <script>
     let debugMode = false;
+    let infoMode = false;
     function toggleMetricsVisibility(debugMode) {
         const metricsContainer = document.getElementById('metrics-container');
         if (debugMode) {
@@ -156,21 +186,33 @@
         }
     }
 
+    function toggleInfoText() {
+        var informaticOriginal = document.getElementById("informaticOriginal");
+        var informaticChanged = document.getElementById("informaticChanged");
+        var informaticButton = document.getElementById("informaticButtonOG");
+        var informatic = document.getElementById("informatic");
+        informatic.classList.toggle("cursor-default");
+        informaticButton.classList.toggle("bg-opacity-40");        
+        informaticChanged.classList.toggle('hidden');
+        informaticChanged.classList.toggle('flex')
+        informaticOriginal.classList.toggle('hidden');
+        infoMode = !infoMode;
+    }
+
     function toggleDebugMode() {
         var debugButton = document.getElementById("debugButton");
         debugButton.classList.toggle("bg-gray-700");
         debugButton.classList.toggle("bg-opacity-40");
-        debugButton.classList.toggle("text-white")
+        debugButton.classList.toggle("text-white");
         debugButton.classList.toggle("text-[#9843cd]");
-        debugButton.classList.toggle("hover:text-[#6d3c8c]")
-        debugButton.classList.toggle("border-white")
-        debugButton.classList.toggle("border-2")
+        debugButton.classList.toggle("hover:text-[#6d3c8c]");
+        debugButton.classList.toggle("border-white");
+        debugButton.classList.toggle("border-2");
         debugMode = !debugMode;
-        toggleMetricsVisibility(debugMode)
+        toggleMetricsVisibility(debugMode);
 
-        showNotification(debugMode ? 'Debug mode activated' : 'Debug mode deactivated');
+        showNotification(debugMode ? 'Debug mode activated' : 'Debug mode deactivated', bgColor='bg-green-500');
     }
-
 
     function inverse(metricType) {
         const metricBoxes = document.querySelectorAll('.metric-box');
@@ -205,6 +247,84 @@
         });
     }
     
+    function transitionIntoInput() {
+        const codeBox = document.getElementById("codeBox");
+        const informaticOriginal = document.getElementById("informaticOriginal");
+
+        if (informaticOriginal.classList.contains('hidden')) {
+            informaticOriginal.classList.remove('hidden');
+            codeBox.classList.add('hidden');
+            codeBox.classList.remove('flex');
+        } else {
+            informaticOriginal.classList.add('hidden');
+            codeBox.classList.add('flex');
+            codeBox.classList.remove('hidden');
+        }
+    }
+
+    document.getElementById("cancelInput").addEventListener("click", function() {
+        transitionIntoInput();
+    });
+
+    document.getElementById("codeSubmit").addEventListener("click", function() {
+        const codeInputValue = document.getElementById("codeInput").value;
+
+        if (codeInputValue.toString().length < 5) {
+            showNotification("Code is not required length.");
+            return;
+        }
+
+        if (isNaN(Number(codeInputValue.toString()))) {
+            showNotification("Code must be only numeric.");
+            return;
+        }
+
+        const TEST_HOST = 'http://localhost:8000'
+        const PROD_HOST = 'https://virtual-graffiti-box.onrender.com'
+        const code_validation_url = TEST_HOST + '/api/v1/validate_code/' + codeInputValue.toString()
+        fetch(code_validation_url , {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => {
+            const storeCodeUrl = '/store_code/';
+            const requestData = {
+                code: codeInputValue
+            };
+
+            fetch(storeCodeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response_t => {
+                if (response_t.ok && response.ok) {
+                    showNotification('Online mode enabled.', bgColor='bg-green-500');
+                    setTimeout(function() {
+                        window.location.href = "{% url 'admin_panel' %}";
+                    }, 2500)
+                } else {
+                    showNotification('Invalid code.');
+                }
+            })
+            .catch(error => {
+                showNotification('Failed to store code.');
+                console.error('Error:', error);
+            });
+        })
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => {
+            showNotification(error.message)
+            console.error('Error:', error);
+        });
+    });
+    
     function createChart(canvas, metricType) {
         let labels, data;
         if (metricType === 'CPU') {
@@ -227,8 +347,8 @@
                 labels: labels,
                 datasets: [{
                     label: metricType + ' Over Past Poll',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(0, 0, 0, 1)',
+                    borderColor: 'rgba(98, 0, 238, 1)',
                     borderWidth: 1,
                     data: data
                 }]
@@ -245,11 +365,9 @@
         });
     }
 
-
-
-    function showNotification(message) {
+    function showNotification(message, bgColor='bg-red-500') {
         const notification = document.createElement('button');
-        notification.classList.add('absolute', 'top-[8%]', 'left-[40%]', 'm-4', 'p-4', 'bg-red-500', 'text-white', 'font-bold', 'rounded-lg', 'shadow-lg', 'opacity-0', 'transform', 'transition', 'duration-300', 'ease-in-out', 'hover:opacity-100');
+        notification.classList.add('absolute', 'top-[8%]', 'left-[40%]', 'm-4', 'p-4', bgColor, 'text-white', 'font-bold', 'rounded-lg', 'shadow-lg', 'opacity-0', 'transform', 'transition', 'duration-300', 'ease-in-out', 'hover:opacity-100');
 
         notification.textContent = message;
 
@@ -277,6 +395,25 @@
             arrows: true,
             cover: true,
         }).mount();
+
+        fetch('https://jsonplaceholder.typicode.com/posts/1')
+        .then(function(response) {
+            if (response.status === 200) {
+                var informaticWindow = document.getElementById("informaticWindow");
+                if (!informaticWindow.classList.contains('xl:flex')) {
+                    informaticWindow.classList.add('xl:flex');
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+        });
+           
+
+        document.getElementById('informaticButtonOG').addEventListener('click', function(event) {
+            event.stopPropagation();
+            toggleInfoText();
+        });
     });
 
     document.addEventListener('DOMContentLoaded', function () {

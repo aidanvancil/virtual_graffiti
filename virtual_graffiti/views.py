@@ -7,6 +7,7 @@ from django.conf import settings as _settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponseRedirect, HttpResponseNotFound
 from app.models import UserProfile, Laser
+from django.urls import reverse
 from screeninfo import get_monitors
 import random
 import cv2
@@ -14,7 +15,9 @@ import qrcode
 import base64
 import os
 from io import BytesIO
+from . import settings
 import json
+import requests
 import numpy as np
 
 '''   
@@ -155,8 +158,38 @@ def logout(request):
     auth_logout(request)
     return redirect('login')
 
+@csrf_exempt
+@login_required(login_url='login')
+def store_code(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        code = data.get('code')
+        request.session['code'] = code
+        request.session.modified = True
+    return redirect('admin_panel')
+
+@login_required(login_url='login')
+def del_code(request):
+    if request.method == 'GET':
+        del request.session['code']
+        request.session.modified = True
+    return redirect('admin_panel')
+
 @login_required(login_url='login')
 def admin_panel(request):
+    code = request.session.get('code', None)
+    connected = False
+    if code:
+        test_host = 'http://localhost:8000'
+        prod_host = 'https://virtual-graffiti-box.onrender.com'
+
+        code_validation_url = f"{test_host if settings.DEBUG else prod_host}/api/v1/validate_code/{code}"
+        try:
+            response = requests.get(code_validation_url)
+            if response.ok:
+                connected = True
+        except requests.RequestException as e:
+            print('Error:', e)
     try:
         absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
         with open(absolute_path, 'r+') as f:
@@ -177,6 +210,7 @@ def admin_panel(request):
         'cpu_usage': 80,
         'mem_usage': 60,
         'video_frames': 60,
+        'connected': connected
     } 
     
     IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'

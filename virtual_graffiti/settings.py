@@ -41,11 +41,22 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tailwind',
     'django_browser_reload',
+    'corsheaders',
     'app',
 ]
 
+if not DEBUG:
+    CORS_ORIGIN_WHITELIST = [
+        'http://localhost:8001',  # Possible code origin
+        'https://virtual-graffiti-box.onrender.com', # Possible code origin
+    ]
+else:
+    CORS_ORIGIN_ALLOW_ALL = True
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
