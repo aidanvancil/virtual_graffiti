@@ -283,7 +283,10 @@
 
         const TEST_HOST = 'http://localhost:8000'
         const PROD_HOST = 'https://virtual-graffiti-box.onrender.com'
-        const code_validation_url = TEST_HOST + '/api/v1/validate_code/' + codeInputValue.toString()
+        const isDeployed = {{ is_deployed|yesno:"true,false" }};
+        const HOST = isDeployed ? PROD_HOST : TEST_HOST
+
+        const code_validation_url = HOST + '/api/v1/validate_code/' + codeInputValue.toString()
         fetch(code_validation_url , {
             method: 'GET',
             headers: {

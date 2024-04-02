@@ -22,8 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-sn73sgam#p1p^-!#i4&i%nhmdjg2&!)2qs7u70^@1t6n#e0=k6'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY WARNING: don't run with debug turned on in production! 
+# KEEP DEBUG ON ALWAYS
 DEBUG = True
+
+# Change this to swap between dev / testing on prod
+IS_DEPLOYED = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1'] # '27fc-47-33-18-76.ngrok-free.app', 
 #CSRF_TRUSTED_ORIGINS = ['https://27fc-47-33-18-76.ngrok-free.app/']
