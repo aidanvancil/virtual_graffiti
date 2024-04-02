@@ -92,7 +92,7 @@ def signup(request):
         UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
         
         if code:
-            response = requests.get(f'{HOST}/api/v1/fetch_settings_url/{code}/') 
+            response = requests.get(f'{HOST}/api/v1/fetch_settings_url/{code}?firstname={first_name}&lastname={last_name}&laser={laser_pointer}') 
             redirect_url = None   
             if response.status_code == 200:
                 response_data = response.json()
