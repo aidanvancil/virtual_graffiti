@@ -307,7 +307,7 @@
                 if (response_t.ok && response.ok) {
                     showNotification('Online mode enabled.', bgColor='bg-green-500');
                     setTimeout(function() {
-                        window.location.href = "{% url 'admin_panel' %}";
+                        window.location.href = "/admin_panel/";
                     }, 2500)
                 } else {
                     showNotification('Invalid code.');
