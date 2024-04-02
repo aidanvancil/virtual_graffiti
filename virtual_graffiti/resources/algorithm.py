@@ -29,7 +29,7 @@ def enumerate_cameras():
     arr = []
     while True:
         cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-        if not cap.read()[0]:
+        if not cap.isOpened():
             break
         arr.append(index)
         cap.release()
@@ -138,6 +138,7 @@ def clear_canvas(canvas):
 def init():
     data_queue = PriorityQueue()
     camera_indexes = enumerate_cameras()
+    print(camera_indexes)
     if len(camera_indexes) == 0:
         print('No cameras found')
         return

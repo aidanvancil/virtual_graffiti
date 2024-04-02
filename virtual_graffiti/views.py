@@ -33,7 +33,7 @@ import numpy as np
     - (F) logout
 '''
 
-HOST = "localhost:8000"
+HOST = "http://localhost:8000"
 
 def get_laser(request, laser_id):
     if request.method == 'GET':
@@ -88,40 +88,78 @@ def signup(request):
         last_name = request.POST.get('lastname')
         laser_pointer = request.POST.get('laser')
         laser = Laser.objects.get(id=laser_pointer)
-
+        code = request.session.get('code', None)
         UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
-        base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
-        redirect_url = f"http://{HOST}/settings/{base64_user_identifier}"
-       
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
         
-        qr.add_data(redirect_url)
-        qr.make(fit=True)
+        if code:
+            response = requests.get(f'{HOST}/api/v1/fetch_settings_url/{code}?firstname={first_name}&lastname={last_name}&laser={laser_pointer}') 
+            redirect_url = None   
+            if response.status_code == 200:
+                response_data = response.json()
+                redirect_url = response_data.get('url')
 
-        img = qr.make_image(fill_color="black", back_color="white")
+                if redirect_url:
+                    print("Settings URL:", redirect_url)
+                else:
+                    print("Error: Failed to get the settings URL")
+            else:
+                print("Error:", response.status_code)
 
-        buffer = BytesIO()
-        img.save(buffer)
-        qr_code_image = buffer.getvalue()
+            if redirect_url:
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                
+                qr.add_data(redirect_url)
+                qr.make(fit=True)
 
-        qr_code_base64 = base64.b64encode(qr_code_image).decode('utf-8')
+                img = qr.make_image(fill_color="black", back_color="white")
 
-        context = {
-            'qr_code_base64': qr_code_base64,
-        }
+                buffer = BytesIO()
+                img.save(buffer)
+                qr_code_image = buffer.getvalue()
 
-        return render(request, 'signup.html', context)\
-            
-    else:  
-        lasers_without_users = Laser.objects.filter(userprofile__isnull=True)
-        context = {
-            'available_lasers': list(lasers_without_users.values_list('id', flat=True))
-        }
+                qr_code_base64 = base64.b64encode(qr_code_image).decode('utf-8')
+
+                context = {
+                    'qr_code_base64': qr_code_base64,
+                }
+                return render(request, 'signup.html', context)
+        else:
+            laser = Laser.objects.get(id=laser_pointer)
+            UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
+            base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
+            redirect_url = f"{HOST}/settings/{base64_user_identifier}"
+            qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+            )
+                
+            qr.add_data(redirect_url)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            buffer = BytesIO()
+            img.save(buffer)
+            qr_code_image = buffer.getvalue()
+
+            qr_code_base64 = base64.b64encode(qr_code_image).decode('utf-8')
+
+            context = {
+                'qr_code_base64': qr_code_base64,
+            }
+            return render(request, 'signup.html', context)
+        
+    lasers_without_users = Laser.objects.filter(userprofile__isnull=True)
+    context = {
+        'available_lasers': list(lasers_without_users.values_list('id', flat=True))
+    }
         
     return render(request, 'signup.html', context)
 
