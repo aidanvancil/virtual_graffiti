@@ -74,8 +74,8 @@
     <div class="w-full h-[80vh] sm:w-1/2 flex flex-col"> <!-- Right section -->
         
         <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
-            <button onclick="toggleDebugMode()"><div id="debugButton" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
             {% if init %}
+                <button onclick="toggleDebugMode()"><div id="debugButton" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
                 <button><a href="{% url 'pull'%}" class="block bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
             {% else %}
                 <button onclick="showNotification('Program initializing', bgColor='bg-green-500')"><a href="{% url '_init'%}" class="block bg-gray-700 bg-opacity-40 text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 xl:px-8 hover:text-gray-700">Calibrate</a></button>
@@ -84,12 +84,14 @@
             <!-- Information button -->
             <d id="informaticWindow" class="hidden text-[#9843cd] font-bold text-lg">
                 <div id="informatic" class="bg-[#9843cd] text-white rounded-lg flex">
+                    {% if not init %}
                     <button onclick="{% if connected %}window.location.href='{% url 'del_code' %}'{% else %}transitionIntoInput(){% endif %}" id="informaticOriginal" class="px-10 py-4 sm:py-2 md:px-6 md:py-3 lg:py-4 lg:px-8 flex">
                         <p class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out hover:text-[#6d3c8c]">Go {% if connected %}Offline{% else %}Online{% endif %}</p>
                         <div id="informaticButtonOG" class="cursor-pointer rounded-full bg-gray-200 w-5 h-5 p-2 xl:flex hidden items-center justify-center ml-4 mr-[-1vw] hover:opacity-50">
                             <i class="text-[#9843cd] text-[0.75rem]">i</i>
                         </div>
                     </button>
+                    {% endif %}
                     <div id="codeBox" class="hidden ml-4 mr-1 space-x-5 items-center py-[0.12rem]">
                         <input type="text" id="codeInput" class="w-1/3 rounded-lg border text-black m-2 text-center animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out" maxlength="5" placeholder="Enter code">
                         <button id="codeSubmit" class="bg-[#161a20] text-[#9843cd] rounded-lg px-2 py-1 m-1 hover:text-gray-700 animate-fade-right animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out">Submit</button>
