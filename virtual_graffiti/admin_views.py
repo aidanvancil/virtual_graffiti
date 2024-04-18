@@ -7,6 +7,7 @@ from django.utils import timezone
 import threading
 import cv2
 import json
+import time
 import socket
 import os
 
@@ -62,23 +63,32 @@ def video_feed(request):
     except:
         cap_idx = 0
 
-    cap = cv2.VideoCapture(cap_idx)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FPS, 5)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 
+    frame_counter1 = 0
+
     def generate():
+        nonlocal frame_counter1
+
         try:
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
-            
-                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
-                frame_bytes = jpeg.tobytes()
+                
+                frame_counter1 += 1
+                if frame_counter1 % 5 == 0:
+                    # Convert frame to HSV
+                    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                    _, jpeg_hsv = cv2.imencode('.jpg', hsv_frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
+                    hsv_frame_bytes = jpeg_hsv.tobytes()
 
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
+                    # Yield HSV frame
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + hsv_frame_bytes + b'\r\n\r\n')
         finally:
             cap.release()
 
