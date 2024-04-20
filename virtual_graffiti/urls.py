@@ -37,6 +37,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin_panel/', views.admin_panel, name='admin_panel'),
     path('video_feed/', admin_views.video_feed, name='video_feed'),
+    path('get_metrics/', admin_views.get_metrics, name='get_metrics'),
     path('', views.login, name='login'),
     path('register/', views.signup, name='signup'),
     path('logout/', views.logout, name='logout'),
