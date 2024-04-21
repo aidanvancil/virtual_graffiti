@@ -19,27 +19,20 @@ HOST = 'localhost'
 PORT = 9999
 
 def get_metrics(request):
-    # Fetch system metrics
     cpu_usage = psutil.cpu_percent()
     memory_usage = psutil.virtual_memory().percent
     def ping_latency():
         try:
-            # Perform ping operation to the specified host
             response_list = ping(HOST, count=1)
-
-            # Check if there's at least one response
             if response_list:
-                # Extract the round trip time (RTT) from the response
                 rtt = response_list.rtt_avg_ms
                 return rtt
             else:
                 return 0
         except Exception as e:
-            print("Error occurred during ping:", e)
             return 0
     fps = random.uniform(1, 5.6)
     latency = ping_latency()
-    print(latency)
     data = {
         'cpu_usage': cpu_usage,
         'memory_usage': memory_usage,
@@ -81,15 +74,12 @@ def init(request):
         Popen(["python", "virtual_graffiti/resources/algorithm.py"])
     return redirect('admin_panel')
 
-def pull(request):
+def pull(request, mode):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
-    data = 'pull'
-    sock.sendall(data.encode())
+    sock.sendall(mode.lower().encode())
     sock.close()
     return redirect('admin_panel')
-
-
 
 @gzip.gzip_page
 def video_feed(request):

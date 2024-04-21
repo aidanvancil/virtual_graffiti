@@ -1,18 +1,17 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
+from django.http import JsonResponse
 from screeninfo import get_monitors
 import random
 import cv2
 import threading
 import numpy as np
-from queue import PriorityQueue
-import importlib
+from queue import Queue
 import math
 import os 
 import time
 from datetime import datetime, timedelta
 import socket
 import threading
+import requests
 
 SKEWED = False
 selected_points = None
@@ -76,16 +75,17 @@ def get_skew_matrix(points, output_width, output_height):
     # Calculate the perspective transform matrix
     matrix = cv2.getPerspectiveTransform(pts_src, pts_dst)
 
-def handle_client_connection(conn, data_queue):
+def handle_client_connection(conn, image_queue, command_queue):
     while True:
         data = conn.recv(1024).decode()
         if not data:
             break
-        print("queued data:", data)
-        if data == 'pull':
-            data_queue.put((0, data))
+        if data == 'fill':
+            command_queue.put(data)
+        elif data == 'party':
+            command_queue.put(data)
         else:
-            data_queue.put((1, data))
+            image_queue.put(data)
 
 def enumerate_cameras():
     index = 0
@@ -217,7 +217,9 @@ def init():
     global selected_points
 
     mode_status = 'offline' #change eventually
-    data_queue = PriorityQueue()
+    mode = 'free'
+    image_queue = Queue()
+    command_queue = Queue()
     # camera_indexes = enumerate_cameras()
     # print(camera_indexes)
     # if len(camera_indexes) == 0:
@@ -245,11 +247,11 @@ def init():
     canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
     canvas_window_name = 'Canvas'
     
-    cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
     last_point_red = None
     last_point_green = None
     last_point_purple = None
     
+    cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
     monitors = get_monitors()
     if len(monitors) > 1:
         external_monitor = monitors[1]
@@ -260,10 +262,10 @@ def init():
 
     frame_cnt = 0
     FILL_THRESHOLD_PERCENT = .75
-    FRAME_DIVISOR = 5
-    MAX_DIST = 1024 
     HOST = 'localhost'
     PORT = 9999
+    party_mode_end_time = None
+
     skewed_clear_area_rect = None
     skewed_palette_pos = []
     curr_image = None
@@ -273,18 +275,6 @@ def init():
     red = (0, 0, 255)
     green = (0, 255, 0)
     purple = (255, 0, 255)
-
-    prev = {
-        str(green): (None, None),
-        str(red): (None, None),
-        str(purple): (None, None)
-    }
-
-    prev_thickness = {
-        str(green): 2,
-        str(red):  2,
-        str(purple): 2
-    }
 
     palette_positions = [[(850, (40 * y) - 65), (900, (40 * y) - 65), (850, (40 * y) - 15), (900, (40 * y) - 15)] for y in range (1, 14) if y % 2 == 0]
     palette_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
@@ -297,21 +287,14 @@ def init():
         server_sock.bind((HOST, PORT))
         server_sock.listen()
         server_sock.setblocking(False)
-
-        print("Waiting for connection...")
         while True:
             
             try:
                 conn, addr = server_sock.accept()
-                print("Connected by", addr)
-                client_thread = threading.Thread(target=handle_client_connection, args=(conn, data_queue))
+                client_thread = threading.Thread(target=handle_client_connection, args=(conn, image_queue, command_queue))
                 client_thread.start()
-
-            except BlockingIOError:
-                pass
-
             except Exception as e:
-                print("Error:", e)
+                pass
             
             ret, frame = cap.read()
             if not ret:
@@ -328,14 +311,20 @@ def init():
                     skewed_palette_pos.append(get_color_palette(matrix, palette_pos))
 
                 
+            if not command_queue.empty():
+                command = command_queue.get()
+                if command == 'fill':
+                    if not image_queue.empty():
+                        clear_canvas(canvas)
+                        mode = 'fill'
+                        curr_image = image_queue.get()
+                elif command == 'party':
+                    clear_canvas(canvas)
+                    mode = 'party'
+                    party_mode_end_time = datetime.now() + timedelta(seconds=30)
+                else:
+                    mode = 'free' 
 
-            if not data_queue.empty() and data_queue.queue[0][1] == 'pull':
-                data_queue.get()
-                if not data_queue.empty():
-                    received_data = data_queue.get()[1]
-                    curr_image = received_data
-                    
-            mode = 'fill' if curr_image else 'free'
             background_image = None
             if mode == 'fill':
                 if curr_image:
@@ -348,7 +337,6 @@ def init():
             red_segmented = color_segmentation(frame, red_lower, red_upper)
             green_segmented = color_segmentation(frame, green_lower, green_upper)
             purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
-            laser_in_clear_area = False
 
             # Process for both rgb lasers in both modes
             for color_index, segmented in enumerate([red_segmented, green_segmented, purple_segmented]): #, purple_segmented]):
@@ -404,7 +392,7 @@ def init():
 
             if mode == 'party':
                 remaining_time = max(party_mode_end_time - datetime.now(), timedelta(seconds=0)).seconds
-
+                print(remaining_time)
 
                 timer_text = f"Time: {remaining_time}"
                 text_size = cv2.getTextSize(timer_text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
@@ -415,20 +403,24 @@ def init():
 
                 if remaining_time == 0:
                     clear_canvas(canvas)
-                    party_mode_end_time = datetime.now() + timedelta(seconds=30)
+                    mode = 'free'
+                    party_mode_end_time = None
 
 
             if SKEWED:
-                if mode_status == 'offline':
+                if mode_status == 'offline' and mode == 'free':
                     for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
                         draw_palette_box(canvas, skewed_palette_p, palette_color)
                         
                 if mode in ['free', 'party']:
                     # Draw the skewed clear button on the canvas
-                    skewed_canvas_with_clear_button = draw_clear_button(canvas, skewed_clear_area_rect)
+                    if mode == 'party':
+                        skewed_canvas = canvas
+                    else:
+                        skewed_canvas = draw_clear_button(canvas, skewed_clear_area_rect)
 
                     # Display the canvas with the clear button
-                    cv2.imshow(canvas_window_name, skewed_canvas_with_clear_button)
+                    cv2.imshow(canvas_window_name, skewed_canvas)
 
             frame_cnt += 1
                                             
