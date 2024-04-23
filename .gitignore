@@ -16,6 +16,7 @@ temp/reset_signal.txt
 *.env
 *.pyc
 *.pyo
+color_ranges.txt
 __pycache__/*
 db.sqlite3
 *.sqlite3

@@ -70,7 +70,6 @@ def init(request):
             except Exception as e:
                 print(e)
                 pass
-            
         Popen(["python", "virtual_graffiti/resources/algorithm.py"])
     return redirect('admin_panel')
 
