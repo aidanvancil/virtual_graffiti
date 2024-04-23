@@ -6,7 +6,7 @@ Utilizing lasers to project visuals onto buildings is a captivating and innovati
 
 The Virtual Graffiti system involves a camera and laptop to track a laser point on a building's exterior, creating graphics from the laser's location and projecting them back onto the surface with a powerful projector. On the backend, is a bastion laptop that hosts the program and computes the real-time data coming from the laser pointer(s) by using open-source libraries and computer vision. 
 
-![Virtual Graffiti Demo](https://youtu.be/wUU7va6CCMU)
+[Virtual Graffiti Demo](https://youtu.be/wUU7va6CCMU)
 
 ## To set up and run Virtual Graffiti, follow these essential equipment and setup steps, applicable to Windows and other operating systems.
 
