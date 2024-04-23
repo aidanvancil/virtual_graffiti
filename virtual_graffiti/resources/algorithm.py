@@ -17,6 +17,72 @@ SKEWED = False
 selected_points = None
 matrix = None
 
+def on_trackbar(val):
+    pass
+
+def find_color_ranges():
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+    colors = {}
+    color_base = {
+        'red': (np.array([0, 100, 100]), np.array([10, 255, 255])),
+        'green': (np.array([50, 100, 100]), np.array([70, 255, 255])),
+        'purple': (np.array([130, 50, 50]), np.array([160, 255, 255]))
+    }        
+
+    for color in ['red', 'green', 'purple']:
+        print(f"Move the {color} laser into the frame and press Enter...")
+        frame = None
+        while True:
+            _, frame = cap.read()
+            cv2.imshow(f'{color.capitalize()} Laser Frame', frame)
+
+            key = cv2.waitKey(1)
+            if key == 13:
+                break
+
+        cv2.destroyAllWindows()
+
+        lower = color_base[color][0]
+        upper = color_base[color][1]
+        colors[color] = (lower, upper )
+
+        cv2.namedWindow(f'{color.capitalize()} HSV Sliders')
+
+        # Create trackbars for HSV adjustment
+        cv2.createTrackbar('Hue Min', f'{color.capitalize()} HSV Sliders', lower[0], 180, on_trackbar)
+        cv2.createTrackbar('Hue Max', f'{color.capitalize()} HSV Sliders', upper[0], 180, on_trackbar)
+        cv2.createTrackbar('Saturation Min', f'{color.capitalize()} HSV Sliders', lower[1], 255, on_trackbar)
+        cv2.createTrackbar('Saturation Max', f'{color.capitalize()} HSV Sliders', upper[1], 255, on_trackbar)
+        cv2.createTrackbar('Value Min', f'{color.capitalize()} HSV Sliders', lower[2], 255, on_trackbar)
+        cv2.createTrackbar('Value Max', f'{color.capitalize()} HSV Sliders', upper[2], 255, on_trackbar)
+
+        while True:
+            # Get the current trackbar positions
+            h_min = cv2.getTrackbarPos('Hue Min', f'{color.capitalize()} HSV Sliders')
+            h_max = cv2.getTrackbarPos('Hue Max', f'{color.capitalize()} HSV Sliders')
+            s_min = cv2.getTrackbarPos('Saturation Min', f'{color.capitalize()} HSV Sliders')
+            s_max = cv2.getTrackbarPos('Saturation Max', f'{color.capitalize()} HSV Sliders')
+            v_min = cv2.getTrackbarPos('Value Min', f'{color.capitalize()} HSV Sliders')
+            v_max = cv2.getTrackbarPos('Value Max', f'{color.capitalize()} HSV Sliders')
+
+            # Update the lower and upper ranges based on trackbar positions
+            colors[color] = (np.array([h_min, s_min, v_min]), np.array([h_max, s_max, v_max]))
+
+            # Apply the new ranges to the frame and show the result
+            mask = cv2.inRange(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV), colors[color][0], colors[color][1])
+            result = cv2.bitwise_and(frame, frame, mask=mask)
+            cv2.imshow(f'{color.capitalize()} HSV Sliders', np.hstack([frame, result]))
+
+            key = cv2.waitKey(1)
+            if key == 13:  # If Enter key is pressed
+                break
+
+        cv2.destroyAllWindows()
+
+    cap.release()
+    return colors['red'][0], colors['red'][1], colors['green'][0], colors['green'][1], colors['purple'][0], colors['purple'][1]
+
 def select_four_corners(image):
     global SKEWED
     global selected_points
@@ -121,7 +187,7 @@ def load_scaled_image(image_path, width, height):
     return cv2.resize(image, (width, height))
 
 #UC04
-def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=140):
+def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radius=180):
     scaled_x = int(x * scale_factor)
     scaled_y = int(y * scale_factor)
     mask = np.zeros(canvas.shape[:2], dtype=np.uint8)
@@ -147,9 +213,9 @@ def update_canvas_with_image(canvas, background_image, x, y, scale_factor, radiu
 #     except UserProfile.DoesNotExist:
 #         return False
 
-def smooth_drawing(last_point, current_point, canvas, color=(0, 0, 255), thickness=2, distance_threshold=50):
+def smooth_drawing(last_point, current_point, canvas, color=(0, 0, 255), thickness=2, distance_threshold=160):
     if last_point is not None and calculate_distance(last_point, current_point) < distance_threshold: # and is_registered(color):
-        cv2.line(canvas, last_point, current_point, color, thickness)
+        cv2.line(canvas, last_point, current_point, color, thickness, lineType=cv2.LINE_AA)
     return current_point
 
 def count_filled_pixels(canvas, background_image):
@@ -158,12 +224,17 @@ def count_filled_pixels(canvas, background_image):
     return filled_pixels, total_pixels
 
 #UC11
-def apply_glitter_effect(canvas, background_image, iterations=400, intensity=7000, delay=2):
+def find_black_coordinates(canvas):
+    black_coords = np.argwhere(np.all(canvas == [0, 0, 0], axis=-1))
+    return black_coords
+
+def apply_glitter_effect(canvas, background_image, iterations=400, intensity=10000, delay=2):
+    black_coords = find_black_coordinates(canvas)
     for _ in range(iterations):
         for _ in range(intensity):
-            x, y = random.randint(0, canvas.shape[1] - 1), random.randint(0, canvas.shape[0] - 1)
-            if np.all(canvas[y, x] == [0, 0, 0]):
-                canvas[y, x] = background_image[y, x]
+            index = random.randint(0, len(black_coords) - 1)
+            y, x = black_coords[index]
+            canvas[y, x] = background_image[y, x]
         cv2.imshow('Canvas', canvas)
         cv2.waitKey(delay)
 
@@ -227,12 +298,7 @@ def init():
     #     return
     # print('Camera found')
 
-    red_lower = np.array([160, 100, 100])
-    red_upper = np.array([190, 255, 255])
-    green_lower = np.array([50, 100, 100])
-    green_upper = np.array([70, 255, 255])
-    purple_lower = np.array([130, 50, 50])
-    purple_upper = np.array([160, 255, 255])
+    red_lower, red_upper, green_lower, green_upper, purple_lower, purple_upper = find_color_ranges()
     
     cap_idx = 0 #camera_indexes[0]
     cap = cv2.VideoCapture(cap_idx, cv2.CAP_DSHOW)
@@ -261,12 +327,13 @@ def init():
     cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     frame_cnt = 0
-    FILL_THRESHOLD_PERCENT = .75
+    FILL_THRESHOLD_PERCENT = .4
     HOST = 'localhost'
     PORT = 9999
     party_mode_end_time = None
 
     skewed_clear_area_rect = None
+    background_image = None
     skewed_palette_pos = []
     curr_image = None
     clear_area_start_time = None
@@ -276,7 +343,7 @@ def init():
     green = (0, 255, 0)
     purple = (255, 0, 255)
 
-    palette_positions = [[(850, (40 * y) - 65), (900, (40 * y) - 65), (850, (40 * y) - 15), (900, (40 * y) - 15)] for y in range (1, 14) if y % 2 == 0]
+    palette_positions = [[(1250, (40 * y) - 65), (1300, (40 * y) - 65), (1250, (40 * y) - 15), (1300, (40 * y) - 15)] for y in range (1, 14) if y % 2 == 0]
     palette_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
     current_color_red = (0, 0, 255)  # Default red laser color
     current_color_green = (0, 255, 0)  # Default green laser color
@@ -325,7 +392,6 @@ def init():
                 else:
                     mode = 'free' 
 
-            background_image = None
             if mode == 'fill':
                 if curr_image:
                     background_image = load_scaled_image(curr_image, canvas_width, canvas_height)
@@ -334,65 +400,68 @@ def init():
                     JsonResponse({'message': 'Image not loaded successfully.'}, status=405)
 
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            red_segmented = color_segmentation(frame, red_lower, red_upper)
-            green_segmented = color_segmentation(frame, green_lower, green_upper)
-            purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
 
-            # Process for both rgb lasers in both modes
-            for color_index, segmented in enumerate([red_segmented, green_segmented, purple_segmented]): #, purple_segmented]):
-                if segmented is None:
-                    continue
-                contours, _ = cv2.findContours(segmented, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if SKEWED:
+                for color_index, color in enumerate(['red', 'green', 'purple']):
+                    mask = None
+                    if color == 'green':
+                        mask = cv2.inRange(hsv_frame, green_lower, green_upper)
+                    elif color == 'red':
+                        mask = cv2.inRange(hsv_frame, red_lower, red_upper)
+                    else:
+                        mask = cv2.inRange(hsv_frame, purple_lower, purple_upper)
+                        
+                    (_, _, _, maxLoc) = cv2.minMaxLoc(mask)
+                    (cx, cy) = maxLoc
+                    if cx is None or cy is None:
+                        continue
+                    current_point = skew_point((cx, cy), matrix)
+                    if skewed_clear_area_rect[0][0] <= current_point[0] <= skewed_clear_area_rect[1][0] and skewed_clear_area_rect[0][1] <= current_point[1] <= skewed_clear_area_rect[2][1]:
+                        if clear_area_start_time is None:
+                            clear_area_start_time = time.time()
+                        elif time.time() - clear_area_start_time >= 3:
+                            clear_canvas(canvas)
+                            clear_area_start_time = None
 
-                for contour in contours:
-                    if is_laser_contour(contour, hsv_frame):
-                        moments = cv2.moments(contour)
-                        if moments["m00"] != 0:
-                            cx = int(moments["m10"] / moments["m00"])
-                            cy = int(moments["m01"] / moments["m00"])
-                            current_point = skew_point((cx, cy), matrix)
-                            if skewed_clear_area_rect[0][0] <= current_point[0] <= skewed_clear_area_rect[1][0] and skewed_clear_area_rect[0][1] <= current_point[1] <= skewed_clear_area_rect[2][1]:
-                                if clear_area_start_time is None:
-                                    clear_area_start_time = time.time()
-                                elif time.time() - clear_area_start_time >= 3:
-                                    clear_canvas(canvas)
-                                    clear_area_start_time = None
+                    if mode == 'fill' and background_image is not None:
+                        update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
 
-                            if mode == 'fill' and background_image is not None:
-                                update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
+                        if frame_cnt % 240 == 0:
+                            filled_pixels, total_pixels = count_filled_pixels(canvas, background_image)
+                            fill_percentage = filled_pixels / total_pixels
+                        else:
+                            fill_percentage = 0
 
-                                filled_pixels, total_pixels = count_filled_pixels(canvas, background_image)
-                                fill_percentage = filled_pixels / total_pixels
-
-                                if fill_percentage >= FILL_THRESHOLD_PERCENT:
-                                    apply_glitter_effect(canvas, canvas_window_name, background_image)
-                                    canvas[:, :] = background_image[:, :]
-                                    time.sleep(5)
-                                    curr_image = None
-                            elif mode == 'free' or mode == 'party':
-                                if mode_status == 'offline':
-                                    for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
-                                         top_left, top_right, bot_left, _ = skewed_palette_p
-                                         if top_left[0] <= current_point[0] <= top_right[0] and top_left[1] <= current_point[1] <= bot_left[1]:
-                                            if color_index == 0:  # Red laser
-                                                current_color_red = palette_color
-                                            elif color_index == 1:  # Green laser
-                                                current_color_green = palette_color
-                                            else:
-                                                current_color_purple = palette_color
-                                            break
-                                color = current_color_red if color_index == 0 else current_color_green if color_index == 1 else current_color_purple
-                                if color_index == 0:
-                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
-                                elif color_index == 1:
-                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
-                                else:
-                                    last_point_purple = smooth_drawing(last_point_purple, current_point, canvas, color)
+                        if fill_percentage >= FILL_THRESHOLD_PERCENT:
+                            apply_glitter_effect(canvas, background_image)
+                            canvas[:, :] = background_image[:, :]
+                            time.sleep(2)
+                            background_image = None
+                            curr_image = None
+                            mode = 'free'
+                    elif mode == 'free' or mode == 'party':
+                        if mode_status == 'offline':
+                            for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
+                                    top_left, top_right, bot_left, _ = skewed_palette_p
+                                    if top_left[0] <= current_point[0] <= top_right[0] and top_left[1] <= current_point[1] <= bot_left[1]:
+                                        if color_index == 0:  # Red laser
+                                            current_color_red = palette_color
+                                        elif color_index == 1:  # Green laser
+                                            current_color_green = palette_color
+                                        else:
+                                            current_color_purple = palette_color
+                                        break
+                        color = current_color_red if color_index == 0 else current_color_green if color_index == 1 else current_color_purple
+                        if color_index == 0:
+                            last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                        elif color_index == 1:
+                            last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
+                        else:
+                            last_point_purple = smooth_drawing(last_point_purple, current_point, canvas, color)
 
 
             if mode == 'party':
                 remaining_time = max(party_mode_end_time - datetime.now(), timedelta(seconds=0)).seconds
-                print(remaining_time)
 
                 timer_text = f"Time: {remaining_time}"
                 text_size = cv2.getTextSize(timer_text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
@@ -405,7 +474,6 @@ def init():
                     clear_canvas(canvas)
                     mode = 'free'
                     party_mode_end_time = None
-
 
             if SKEWED:
                 if mode_status == 'offline' and mode == 'free':
@@ -421,6 +489,8 @@ def init():
 
                     # Display the canvas with the clear button
                     cv2.imshow(canvas_window_name, skewed_canvas)
+                elif mode == 'fill':
+                    cv2.imshow(canvas_window_name, canvas)
 
             frame_cnt += 1
                                             
@@ -436,7 +506,7 @@ def init():
                     print(e)
                 break
             elif key == ord('c') and mode != 'party':  # Clear canvas if 'c' is pressed
-                clear_canvas(skewed_canvas_with_clear_button)
+                clear_canvas(skewed_canvas)
         conn.close()
         cv2.destroyAllWindows()
     cap.release()

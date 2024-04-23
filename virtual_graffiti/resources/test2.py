@@ -1,21 +1,69 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
+from django.http import JsonResponse
 from screeninfo import get_monitors
 import random
 import cv2
 import threading
 import numpy as np
-from queue import PriorityQueue
-import importlib
+from queue import Queue
 import math
 import os 
 import time
+from datetime import datetime, timedelta
 import socket
 import threading
+import requests
 
 SKEWED = False
 selected_points = None
 matrix = None
+
+def find_color_ranges():
+    def find_color_range(frame, color):
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = None
+
+        if color == 'red':
+            lower_range = np.array([0, 100, 100])
+            upper_range = np.array([10, 255, 255])
+        elif color == 'green':
+            lower_range = np.array([50, 100, 100])
+            upper_range = np.array([70, 255, 255])
+        elif color == 'purple':
+            lower_range = np.array([130, 50, 50])
+            upper_range = np.array([160, 255, 255])
+
+        mask = cv2.inRange(hsv, lower_range, upper_range)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if contours:
+            max_contour = max(contours, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(max_contour)
+            lower_range = np.array([hsv[y, x, 0] - 10, 100, 100])
+            upper_range = np.array([hsv[y, x, 0] + 10, 255, 255])
+
+        return lower_range, upper_range
+
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+    colors = {}
+
+    for color in ['red', 'green', 'purple']:
+        print(f"Move the {color} laser into the frame and press Enter...")
+        frame = None
+        while True:
+            ret, frame = cap.read()
+            cv2.imshow(f'{color.capitalize()} Laser Frame', frame)
+
+            key = cv2.waitKey(1)
+            if key == 13:  # If Enter key is pressed
+                break
+
+        cv2.destroyAllWindows()
+        lower, upper = find_color_range(frame, color)
+        colors[color] = (lower, upper)
+
+    cap.release()
+    return colors['red'][0], colors['red'][1], colors['green'][0], colors['green'][1], colors['purple'][0], colors['purple'][1]
 
 def select_four_corners(image):
     global SKEWED
@@ -30,7 +78,6 @@ def select_four_corners(image):
     # Minify the frame for corner selection
     minified_image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
     minified_image_initial = minified_image.copy()
-    minified_image_initial = increase_brightness(minified_image_initial)
     # Store the points
     points = []
     num_points = 0
@@ -76,16 +123,17 @@ def get_skew_matrix(points, output_width, output_height):
     # Calculate the perspective transform matrix
     matrix = cv2.getPerspectiveTransform(pts_src, pts_dst)
 
-def handle_client_connection(conn, data_queue):
+def handle_client_connection(conn, image_queue, command_queue):
     while True:
         data = conn.recv(1024).decode()
         if not data:
             break
-        print("queued data:", data)
-        if data == 'pull':
-            data_queue.put((0, data))
+        if data == 'fill':
+            command_queue.put(data)
+        elif data == 'party':
+            command_queue.put(data)
         else:
-            data_queue.put((1, data))
+            image_queue.put(data)
 
 def enumerate_cameras():
     index = 0
@@ -157,61 +205,48 @@ def count_filled_pixels(canvas, background_image):
     total_pixels = background_image.shape[0] * background_image.shape[1]
     return filled_pixels, total_pixels
 
-def calculate_thickness(dist):
-    thickness = 24
-    if 12 <= dist < 25:
-        thickness = 22
-    elif 25 <= dist < 37:
-        thickness = 20
-    elif 37 <= dist < 49:
-        thickness = 18
-    elif 49 <= dist < 61:
-        thickness = 16
-    elif 61 <= dist < 73:
-        thickness = 14
-    elif 73 <= dist < 85:
-        thickness = 12
-    elif 85 <= dist < 97:
-        thickness = 10
-    elif 97 <= dist < 109:
-        thickness = 8
-    elif 109 <= dist < 121:
-        thickness = 6
-    elif 121 <= dist < 133:
-        thickness = 4
-    elif 133 <= dist:
-        thickness = 2
-    return thickness
-
 #UC11
-def apply_glitter_effect(canvas, canvas_window_name, background_image, iterations=400, intensity=600, delay=8):
+def apply_glitter_effect(canvas, background_image, iterations=400, intensity=7000, delay=2):
     for _ in range(iterations):
         for _ in range(intensity):
             x, y = random.randint(0, canvas.shape[1] - 1), random.randint(0, canvas.shape[0] - 1)
-            if np.all(canvas[y, x] == [0, 0, 0]): 
+            if np.all(canvas[y, x] == [0, 0, 0]):
                 canvas[y, x] = background_image[y, x]
-        cv2.imshow(canvas_window_name, canvas)
+        cv2.imshow('Canvas', canvas)
         cv2.waitKey(delay)
 
-
-def clear_canvas(canvas):
-    canvas[:, :] = 0
 
 def skew_point(point, skew_matrix):
     homogeneous_point = np.array([point[0], point[1], 1])
     skewed_point = np.dot(skew_matrix, homogeneous_point)
     return (int(skewed_point[0] / skewed_point[2]), int(skewed_point[1] / skewed_point[2]))
 
+def clear_canvas(canvas):
+    canvas[:, :] = 0
+
 def get_clear_button(skew_matrix, clear_area_rect):
     # Skew the clear button position
-    print(clear_area_rect)
-    print(skew_point(clear_area_rect[0], skew_matrix))
     skewed_clear_area_rect = [skew_point(clear_area_rect[0], skew_matrix),
                               skew_point(clear_area_rect[1], skew_matrix),
                               skew_point(clear_area_rect[3], skew_matrix),
                               skew_point(clear_area_rect[2], skew_matrix),
                             ]
     return skewed_clear_area_rect
+
+def get_color_palette(skew_matrix, color_pallete_rect):
+    skewed_clear_area_rect = [skew_point(color_pallete_rect[0], skew_matrix),
+                              skew_point(color_pallete_rect[1], skew_matrix),
+                              skew_point(color_pallete_rect[3], skew_matrix),
+                              skew_point(color_pallete_rect[2], skew_matrix),
+                            ]
+    return skewed_clear_area_rect
+
+def draw_palette_box(skewed_canvas, palette_box, color):
+    list_ver = [list(i) for i in palette_box]
+    pts = np.array(list_ver, np.int32)
+    pts = pts.reshape((-1,1,2))
+    cv2.fillPoly(skewed_canvas, [pts], color)
+    return skewed_canvas
 
 def draw_clear_button(skewed_canvas, skewed_clear_area_rect):
     # Convert coordinates to integer and reshape as needed
@@ -229,18 +264,18 @@ def init():
     global matrix
     global selected_points
 
-    data_queue = PriorityQueue()
+    mode_status = 'offline' #change eventually
+    mode = 'free'
+    image_queue = Queue()
+    command_queue = Queue()
     # camera_indexes = enumerate_cameras()
     # print(camera_indexes)
     # if len(camera_indexes) == 0:
     #     print('No cameras found')
     #     return
     # print('Camera found')
+    red_lower, red_upper, green_lower, green_upper, purple_lower, purple_upper = find_color_ranges()
 
-    red_lower = np.array([160, 100, 100])
-    red_upper = np.array([190, 255, 255])
-    green_lower = np.array([50, 100, 100])
-    green_upper = np.array([70, 255, 255])
     
     cap_idx = 0 #camera_indexes[0]
     cap = cv2.VideoCapture(cap_idx, cv2.CAP_DSHOW)
@@ -255,10 +290,11 @@ def init():
     canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
     canvas_window_name = 'Canvas'
     
-    cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
     last_point_red = None
     last_point_green = None
+    last_point_purple = None
     
+    cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
     monitors = get_monitors()
     if len(monitors) > 1:
         external_monitor = monitors[1]
@@ -266,69 +302,71 @@ def init():
 
     
     cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        
+
     frame_cnt = 0
     FILL_THRESHOLD_PERCENT = .75
-    FRAME_DIVISOR = 5
-    MAX_DIST = 1024 
     HOST = 'localhost'
     PORT = 9999
+    party_mode_end_time = None
     skewed_clear_area_rect = None
+    skewed_palette_pos = []
     curr_image = None
     clear_area_start_time = None
-    clear_area_rect = [(20, 20), (60, 20), 
-                       (20, 40), (60, 40)]
+    clear_area_rect = [(20, 20), (90, 20), 
+                       (20, 55), (90, 55)]
     red = (0, 0, 255)
     green = (0, 255, 0)
-    prev = {
-        str(green): (None, None),
-        str(red): (None, None)
-    }
+    purple = (255, 0, 255)
 
-    prev_thickness = {
-        str(green): 2,
-        str(red):  2
-    }
+    palette_positions = [[(850, (40 * y) - 65), (900, (40 * y) - 65), (850, (40 * y) - 15), (900, (40 * y) - 15)] for y in range (1, 14) if y % 2 == 0]
+    palette_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
+    current_color_red = (0, 0, 255)  # Default red laser color
+    current_color_green = (0, 255, 0)  # Default green laser color
+    current_color_purple = (255, 0, 255)
 
     #UC03
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
         server_sock.bind((HOST, PORT))
         server_sock.listen()
         server_sock.setblocking(False)
-
-        print("Waiting for connection...")
         while True:
             
             try:
                 conn, addr = server_sock.accept()
-                print("Connected by", addr)
-                client_thread = threading.Thread(target=handle_client_connection, args=(conn, data_queue))
+                client_thread = threading.Thread(target=handle_client_connection, args=(conn, image_queue, command_queue))
                 client_thread.start()
-
-            except BlockingIOError:
-                pass
-
             except Exception as e:
-                print("Error:", e)
+                pass
             
             ret, frame = cap.read()
             if not ret:
                 print("Error: Failed to capture frame.")
                 break
-            
+
             if not SKEWED and np.sum(frame) != 0 and np.sum(frame) != 45619200:
                 points = select_four_corners(frame.copy())
                 get_skew_matrix(points, int(screen_width), int(screen_height))
                 clear_area_rect = [(x + points[0][0], y+points[0][1]) for (x, y) in clear_area_rect]
                 skewed_clear_area_rect = get_clear_button(matrix, clear_area_rect)
+                for palette_pos, palette_color in zip(palette_positions, palette_colors):
+                    palette_pos = [(x + points[0][0], y+points[0][1]) for (x, y) in palette_pos]
+                    skewed_palette_pos.append(get_color_palette(matrix, palette_pos))
 
-            if not data_queue.empty() and data_queue.queue[0][1] == 'pull':
-                data_queue.get()
-                if not data_queue.empty():
-                    received_data = data_queue.get()[1]
-                    curr_image = received_data
-                    
-            mode = 'fill' if curr_image else 'free'
+                
+            if not command_queue.empty():
+                command = command_queue.get()
+                if command == 'fill':
+                    if not image_queue.empty():
+                        clear_canvas(canvas)
+                        mode = 'fill'
+                        curr_image = image_queue.get()
+                elif command == 'party':
+                    clear_canvas(canvas)
+                    mode = 'party'
+                    party_mode_end_time = datetime.now() + timedelta(seconds=30)
+                else:
+                    mode = 'free' 
+
             background_image = None
             if mode == 'fill':
                 if curr_image:
@@ -340,10 +378,12 @@ def init():
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             red_segmented = color_segmentation(frame, red_lower, red_upper)
             green_segmented = color_segmentation(frame, green_lower, green_upper)
-            #purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
+            purple_segmented = color_segmentation(frame, purple_lower, purple_upper)
 
             # Process for both rgb lasers in both modes
-            for color_index, segmented in enumerate([red_segmented, green_segmented]): #, purple_segmented]):
+            for color_index, segmented in enumerate([red_segmented, green_segmented, purple_segmented]): #, purple_segmented]):
+                if segmented is None:
+                    continue
                 contours, _ = cv2.findContours(segmented, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
                 for contour in contours:
@@ -353,17 +393,12 @@ def init():
                             cx = int(moments["m10"] / moments["m00"])
                             cy = int(moments["m01"] / moments["m00"])
                             current_point = skew_point((cx, cy), matrix)
-                            if frame_cnt % 60 == 0:
-                                print(current_point)
-                                print(skewed_clear_area_rect)
                             if skewed_clear_area_rect[0][0] <= current_point[0] <= skewed_clear_area_rect[1][0] and skewed_clear_area_rect[0][1] <= current_point[1] <= skewed_clear_area_rect[2][1]:
                                 if clear_area_start_time is None:
                                     clear_area_start_time = time.time()
-                                elif time.time() - clear_area_start_time >= 1.5:  # Laser has been in the clear area for 3 seconds
+                                elif time.time() - clear_area_start_time >= 3:
                                     clear_canvas(canvas)
-                                    clear_area_start_time = None  # Reset the timer
-                            else:
-                                clear_area_start_time = None  # Reset the timer if the laser moves out of the clear area
+                                    clear_area_start_time = None
 
                             if mode == 'fill' and background_image is not None:
                                 update_canvas_with_image(canvas, background_image, cx, cy, scale_factor)
@@ -372,43 +407,65 @@ def init():
                                 fill_percentage = filled_pixels / total_pixels
 
                                 if fill_percentage >= FILL_THRESHOLD_PERCENT:
-                                    # Apply glitter effect before filling the entire image
                                     apply_glitter_effect(canvas, canvas_window_name, background_image)
                                     canvas[:, :] = background_image[:, :]
                                     time.sleep(5)
                                     curr_image = None
-                            elif mode == 'free':
-                                color = red if color_index == 0 else green
-                                if frame_cnt % FRAME_DIVISOR == 0:
-                                    (x, y) = prev[str(color)]
-                                    if x is None or y is None:
-                                        if color_index == 0:
-                                            last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
-                                        else:
-                                            last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
-                                        prev[str(color)] = (cx, cy)
-                                        continue
-                                        
-                                    dist = calculate_distance((cx, cy), prev[str(color)])
-                                    prev[str(color)] = (cx, cy)
-                                    if MAX_DIST - dist <= 0:
-                                        dist = 0
-                                    thickness = calculate_thickness(dist)
-                                    prev_thickness[str(color)] = int(thickness)
-
+                            elif mode == 'free' or mode == 'party':
+                                if mode_status == 'offline':
+                                    for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
+                                         top_left, top_right, bot_left, _ = skewed_palette_p
+                                         if top_left[0] <= current_point[0] <= top_right[0] and top_left[1] <= current_point[1] <= bot_left[1]:
+                                            if color_index == 0:  # Red laser
+                                                current_color_red = palette_color
+                                            elif color_index == 1:  # Green laser
+                                                current_color_green = palette_color
+                                            else:
+                                                current_color_purple = palette_color
+                                            break
+                                color = current_color_red if color_index == 0 else current_color_green if color_index == 1 else current_color_purple
                                 if color_index == 0:
-                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color, thickness=prev_thickness[str(color)])
+                                    last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                                elif color_index == 1:
+                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
                                 else:
-                                    last_point_green = smooth_drawing(last_point_green, current_point, canvas, color, thickness=prev_thickness[str(color)])
+                                    last_point_purple = smooth_drawing(last_point_purple, current_point, canvas, color)
+
+
+            if mode == 'party':
+                remaining_time = max(party_mode_end_time - datetime.now(), timedelta(seconds=0)).seconds
+                print(remaining_time)
+
+                timer_text = f"Time: {remaining_time}"
+                text_size = cv2.getTextSize(timer_text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
+                timer_position = (canvas_width - text_size[0] - 50, canvas_height - 30)
+                cv2.rectangle(canvas, (timer_position[0] - 20, canvas_height - text_size[1] - 60), (canvas_width, canvas_height), (0, 0, 0), -1)
+                cv2.putText(canvas, timer_text, timer_position, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
+
+
+                if remaining_time == 0:
+                    clear_canvas(canvas)
+                    mode = 'free'
+                    party_mode_end_time = None
+
+
+            if SKEWED:
+                if mode_status == 'offline' and mode == 'free':
+                    for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
+                        draw_palette_box(canvas, skewed_palette_p, palette_color)
+                        
+                if mode in ['free', 'party']:
+                    # Draw the skewed clear button on the canvas
+                    if mode == 'party':
+                        skewed_canvas = canvas
+                    else:
+                        skewed_canvas = draw_clear_button(canvas, skewed_clear_area_rect)
+
+                    # Display the canvas with the clear button
+                    cv2.imshow(canvas_window_name, skewed_canvas)
 
             frame_cnt += 1
                                             
-            if SKEWED:
-                # Draw the skewed clear button on the canvas
-                skewed_canvas_with_clear_button = draw_clear_button(canvas, skewed_clear_area_rect)
-
-                # Display the canvas with the clear button
-                cv2.imshow(canvas_window_name, skewed_canvas_with_clear_button)
             
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
@@ -419,8 +476,8 @@ def init():
                             f.write('1')
                 except Exception as e:
                     print(e)
-                breakq
-            elif key == ord('c'):  # Clear canvas if 'c' is pressed
+                break
+            elif key == ord('c') and mode != 'party':  # Clear canvas if 'c' is pressed
                 clear_canvas(skewed_canvas_with_clear_button)
         conn.close()
         cv2.destroyAllWindows()
