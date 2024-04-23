@@ -33,7 +33,7 @@ import numpy as np
     - (F) logout
 '''
 
-HOST = "http://localhost:8000"
+HOST = "https://virtual-graffiti-box.onrender.com" if _settings.IS_DEPLOYED else "http://localhost:8000"
 
 def get_laser(request, laser_id):
     if request.method == 'GET':
@@ -218,10 +218,7 @@ def admin_panel(request):
     code = request.session.get('code', None)
     connected = False
     if code:
-        test_host = 'http://localhost:8000'
-        prod_host = 'https://virtual-graffiti-box.onrender.com'
-
-        code_validation_url = f"{test_host if settings.DEBUG else prod_host}/api/v1/validate_code/{code}"
+        code_validation_url = f"{HOST}/api/v1/validate_code/{code}"
         try:
             response = requests.get(code_validation_url)
             if response.ok:
@@ -248,7 +245,8 @@ def admin_panel(request):
         'cpu_usage': 80,
         'mem_usage': 60,
         'video_frames': 60,
-        'connected': connected
+        'connected': connected,
+        'is_deployed': _settings.IS_DEPLOYED
     } 
     
     IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'

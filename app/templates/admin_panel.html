@@ -52,20 +52,20 @@
             <div class="space-x-5 hidden md:flex">
                 <button onclick="inverse('CPU')" class="w-2/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out metric-box" data-label="CPU">CPU</button>
                 <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
-                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                    <canvas id="cpu-chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
                 </div>
                 <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
-                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                    <canvas id="memory-chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
                 </div>
                 <button  onclick="inverse('Memory')" class="w-3/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[200ms] animate-ease-in-out metric-box" data-label="Memory">Memory</button>
             </div>
             <div class="space-x-5 hidden md:flex">
                 <button  onclick="inverse('Latency')" class="w-3/5 hidden lg:block py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[300ms] animate-ease-in-out metric-box" data-label="Latency">Latency</button>
                 <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
-                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                    <canvas id="latency-chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
                 </div>
                 <div class="chart-container bg-white rounded-lg shadow-md p-4 hidden">
-                    <canvas id="chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
+                    <canvas id="frame-loss-chart" class="animate-fade-right animate-once animate-duration-500 animate-delay-[100ms] animate-ease-in-out"></canvas>
                 </div>
                 <button onclick="inverse('Frames')" class="w-2/5 py-4 rounded-lg bg-[#9843cd] text-white hover:text-[#6d3c8c] animate-fade-right animate-once animate-duration-500 animate-delay-[400ms] animate-ease-in-out metric-box" data-label="Frames">Frames</button>
             </div>
@@ -76,7 +76,8 @@
         <div id="top_third" class="sm:h-1/4 h-1/2 w-11/12 flex items-center space-x-6 mx-auto"> <!-- Top 1/3 -->
             {% if init %}
                 <button onclick="toggleDebugMode()"><div id="debugButton" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Debug</div></button>
-                <button><a href="{% url 'pull'%}" class="block bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
+                <button><a href="{% url 'pull' mode='fill'%}" class="block bg-gray-700 bg-opacity-40  text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-gray-700">Fill Mode</a></button>
+                <button><a href="{% url 'pull' mode='party'%}" class="bg-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold text-white sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 lg:px-8 hover:text-[#6d3c8c]">Party Mode</a></button>
             {% else %}
                 <button onclick="showNotification('Program initializing', bgColor='bg-green-500')"><a href="{% url '_init'%}" class="block bg-gray-700 bg-opacity-40 text-[#9843cd] rounded-lg px-10 py-4 text-sm font-bold sm:py-2 md:px-6 md:text-lg md:py-3 lg:py-4 xl:px-8 hover:text-gray-700">Calibrate</a></button>
             {% endif %}
@@ -179,6 +180,17 @@
 <script>
     let debugMode = false;
     let infoMode = false;
+    let updateIntervalId = null;
+
+    function toggleChartsPoll() {
+        if (debugMode) {
+            updateCharts();
+            setTimeout(toggleChartsPoll, 5000);
+        } else {
+            clearInterval(updateIntervalId);
+        }
+    }
+
     function toggleMetricsVisibility(debugMode) {
         const metricsContainer = document.getElementById('metrics-container');
         if (debugMode) {
@@ -211,6 +223,7 @@
         debugButton.classList.toggle("border-white");
         debugButton.classList.toggle("border-2");
         debugMode = !debugMode;
+        toggleChartsPoll()
         toggleMetricsVisibility(debugMode);
 
         showNotification(debugMode ? 'Debug mode activated' : 'Debug mode deactivated', bgColor='bg-green-500');
@@ -235,7 +248,6 @@
 
                     chartContainers[index].style.display = 'block';
                     box.classList.add('active', 'font-bold', 'text-3xl');
-                    createChart(canvas[index], metricType);
                 } else {
                     metricBoxes.forEach((otherBox, otherIndex) => {
                         if (otherIndex !== index) {
@@ -283,7 +295,10 @@
 
         const TEST_HOST = 'http://localhost:8000'
         const PROD_HOST = 'https://virtual-graffiti-box.onrender.com'
-        const code_validation_url = TEST_HOST + '/api/v1/validate_code/' + codeInputValue.toString()
+        const isDeployed = {{ is_deployed|yesno:"true,false" }};
+        const HOST = isDeployed ? PROD_HOST : TEST_HOST
+
+        const code_validation_url = HOST + '/api/v1/validate_code/' + codeInputValue.toString()
         fetch(code_validation_url , {
             method: 'GET',
             headers: {
@@ -327,43 +342,110 @@
         });
     });
     
-    function createChart(canvas, metricType) {
-        let labels, data;
-        if (metricType === 'CPU') {
-            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
-            data = [65.9, 59.8, 80.3, 81.1, 56.1, 55.5, 40.3];
-        } else if (metricType === 'Memory') {
-            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
-            data = [45, 30, 60, 75, 50, 65, 55];
-        } else if (metricType === 'Latency') {
-            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
-            data = [100, 200, 300, 300, 200, 100, 100]; // Converted to milliseconds
-        } else if (metricType === 'Frames') {
-            labels = ['0s', '10s', '20s', '30s', '40s', '50s', '60s'];
-            data = [70, 75, 60, 65, 65, 35, 69];
-        }
+    const dataBuffer = {
+        CPU: [],
+        Memory: [],
+        Latency: [],
+        Frames: []
+    };
 
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: metricType + ' Over Past Poll',
-                    backgroundColor: 'rgba(0, 0, 0, 1)',
-                    borderColor: 'rgba(98, 0, 238, 1)',
-                    borderWidth: 1,
-                    data: data
-                }]
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
+    function updateCharts() {
+        fetch(`/get_metrics/`)
+            .then(response => response.json())
+            .then(data => {
+            console.log(data);
+
+            dataBuffer.CPU.push(data.cpu_usage);
+            dataBuffer.Memory.push(data.memory_usage);
+            dataBuffer.Latency.push(data.latency);
+            dataBuffer.Frames.push(data.fps);
+
+            const existingCPUChart = Chart.getChart('cpu-chart');
+            if (existingCPUChart) {
+                existingCPUChart.destroy();
+            }
+            const existingMemoryChart = Chart.getChart('memory-chart');
+            if (existingMemoryChart) {
+                existingMemoryChart.destroy();
+            }
+            const existingLatencyChart = Chart.getChart('latency-chart');
+            if (existingLatencyChart) {
+                existingLatencyChart.destroy();
+            }
+            const existingFrameLossChart = Chart.getChart('frame-loss-chart');
+            if (existingFrameLossChart) {
+                existingFrameLossChart.destroy();
+            }
+
+            Object.keys(dataBuffer).forEach(metric => {
+                if (dataBuffer[metric].length > 10) {
+                    dataBuffer[metric].shift();
+                }
+            });
+
+            const labels = Array.from({ length: dataBuffer.CPU.length }, (_, i) => Math.round((dataBuffer.CPU.length - i - 1) * 5) + 's');
+
+            new Chart(document.getElementById('cpu-chart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'CPU Usage (%)',
+                        backgroundColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(98, 0, 238, 1)',
+                        borderWidth: 1,
+                        data: dataBuffer.CPU
                     }]
                 }
-            }
+            });
+
+            // Update the Memory chart
+            new Chart(document.getElementById('memory-chart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Memory Usage (%)',
+                        backgroundColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(98, 0, 238, 1)',
+                        borderWidth: 1,
+                        data: dataBuffer.Memory
+                    }]
+                }
+            });
+
+            // Update the Latency chart
+            new Chart(document.getElementById('latency-chart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        backgroundColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(98, 0, 238, 1)',
+                        borderWidth: 1,
+                        data: dataBuffer.Latency
+                    }]
+                }
+            });
+
+            // Update the Frames chart
+            new Chart(document.getElementById('frame-loss-chart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frame Loss',
+                        backgroundColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(98, 0, 238, 1)',
+                        borderWidth: 1,
+                        data: dataBuffer.Frames
+                    }]
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
         });
     }
 
@@ -484,7 +566,7 @@
                 }
             },
             complete: function() {
-                setTimeout(checkResetSignal, 5000);
+                setTimeout(checkResetSignal, 10000);
             }
         });
     }
