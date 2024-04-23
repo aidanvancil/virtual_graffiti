@@ -49,7 +49,6 @@ def find_color_ranges():
 
         cv2.namedWindow(f'{color.capitalize()} HSV Sliders')
 
-        # Create trackbars for HSV adjustment
         cv2.createTrackbar('Hue Min', f'{color.capitalize()} HSV Sliders', lower[0], 180, on_trackbar)
         cv2.createTrackbar('Hue Max', f'{color.capitalize()} HSV Sliders', upper[0], 180, on_trackbar)
         cv2.createTrackbar('Saturation Min', f'{color.capitalize()} HSV Sliders', lower[1], 255, on_trackbar)
@@ -58,7 +57,6 @@ def find_color_ranges():
         cv2.createTrackbar('Value Max', f'{color.capitalize()} HSV Sliders', upper[2], 255, on_trackbar)
 
         while True:
-            # Get the current trackbar positions
             h_min = cv2.getTrackbarPos('Hue Min', f'{color.capitalize()} HSV Sliders')
             h_max = cv2.getTrackbarPos('Hue Max', f'{color.capitalize()} HSV Sliders')
             s_min = cv2.getTrackbarPos('Saturation Min', f'{color.capitalize()} HSV Sliders')
@@ -66,10 +64,8 @@ def find_color_ranges():
             v_min = cv2.getTrackbarPos('Value Min', f'{color.capitalize()} HSV Sliders')
             v_max = cv2.getTrackbarPos('Value Max', f'{color.capitalize()} HSV Sliders')
 
-            # Update the lower and upper ranges based on trackbar positions
             colors[color] = (np.array([h_min, s_min, v_min]), np.array([h_max, s_max, v_max]))
 
-            # Apply the new ranges to the frame and show the result
             mask = cv2.inRange(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV), colors[color][0], colors[color][1])
             result = cv2.bitwise_and(frame, frame, mask=mask)
             cv2.imshow(f'{color.capitalize()} HSV Sliders', np.hstack([frame, result]))
@@ -90,13 +86,10 @@ def select_four_corners(image):
     if SKEWED:
         return selected_points
 
-    # Display instructions
     instructions = ['select top-right corner', 'select bottom-right corner', 'select bottom-left corner']
 
-    # Minify the frame for corner selection
     minified_image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
     minified_image_initial = minified_image.copy()
-    # Store the points
     points = []
     num_points = 0
     
@@ -121,8 +114,6 @@ def select_four_corners(image):
     cv2.setMouseCallback("Select Corners", mouse_callback)
     cv2.waitKey(0)
     
-    
-    # Update global variables
     selected_points = points
     SKEWED = True
     
@@ -132,13 +123,8 @@ def select_four_corners(image):
 
 def get_skew_matrix(points, output_width, output_height):
     global matrix
-    # Define the corners of the skewed area
-    pts_src = np.array(points, dtype=np.float32)
-    
-    # Define the corners of the desired output
+    pts_src = np.array(points, dtype=np.float32)    
     pts_dst = np.array([[0, 0], [output_width - 1, 0], [output_width - 1, output_height - 1], [0, output_height - 1]], dtype=np.float32)
-
-    # Calculate the perspective transform matrix
     matrix = cv2.getPerspectiveTransform(pts_src, pts_dst)
 
 def handle_client_connection(conn, image_queue, command_queue):
