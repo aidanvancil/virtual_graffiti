@@ -11,7 +11,6 @@ import time
 from datetime import datetime, timedelta
 import socket
 import threading
-import requests
 
 SKEWED = False
 selected_points = None
@@ -28,7 +27,25 @@ def find_color_ranges():
         'red': (np.array([0, 100, 100]), np.array([10, 255, 255])),
         'green': (np.array([50, 100, 100]), np.array([70, 255, 255])),
         'purple': (np.array([130, 50, 50]), np.array([160, 255, 255]))
-    }        
+    }   
+    if os.path.exists("color_ranges.txt"):
+        try:
+            with open("color_ranges.txt", "r") as f:
+                lines = f.readlines()
+                red_lower = eval(lines[0].split(":")[1].strip())
+                red_upper = eval(lines[1].split(":")[1].strip())
+                green_lower = eval(lines[2].split(":")[1].strip())
+                green_upper = eval(lines[3].split(":")[1].strip())
+                purple_lower = eval(lines[4].split(":")[1].strip())
+                purple_upper = eval(lines[5].split(":")[1].strip())
+            color_base = {
+                'red': (red_lower, red_upper),
+                'green': (green_lower, green_upper),
+                'purple': (purple_lower, purple_upper)
+            }
+        except Exception as e:
+            print(e)
+             
 
     for color in ['red', 'green', 'purple']:
         print(f"Move the {color} laser into the frame and press Enter...")
@@ -486,8 +503,16 @@ def init():
                 absolute_path = os.path.abspath('./../virtual_graffiti/virtual_graffiti/temp/reset_signal.txt')
                 try:
                     with open(absolute_path, 'w') as f:
-                            f.seek(0)
-                            f.write('1')
+                        f.seek(0)
+                        f.write('1')
+                    with open("color_ranges.txt", "w") as f:
+                        f.seek(0)
+                        f.write(f"red_lower: {red_lower}\n")
+                        f.write(f"red_upper: {red_upper}\n")
+                        f.write(f"green_lower: {green_lower}\n")
+                        f.write(f"green_upper: {green_upper}\n")
+                        f.write(f"purple_lower: {purple_lower}\n")
+                        f.write(f"purple_upper: {purple_upper}\n")
                 except Exception as e:
                     print(e)
                 break
