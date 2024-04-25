@@ -74,10 +74,11 @@ def set_laser_style(request, laser_id):
 
 @login_required(login_url='login')
 def remove_user_and_release_laser(request, first_name, last_name):
-    user_to_del = get_object_or_404(UserProfile, first_name=first_name, last_name=last_name)
-    
-    if user_to_del:
+    users_to_del = UserProfile.objects.filter(first_name=first_name, last_name=last_name)    
+    if users_to_del.exists():
+        user_to_del = users_to_del.first()
         user_to_del.delete()
+    
     return redirect(admin_panel)
 
 #UC01, FR4
