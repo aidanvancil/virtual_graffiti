@@ -178,6 +178,37 @@
 </div>
 
 <script>
+    const TEST_HOST = 'http://localhost:8000'
+    const PROD_HOST = 'https://virtual-graffiti-box.onrender.com'
+    const isDeployed = {{ is_deployed|yesno:"true,false" }};
+    const HOST = isDeployed ? PROD_HOST : TEST_HOST;
+    let laserIntervalId = null;
+
+    if ('{{connected}}') {
+        document.addEventListener("DOMContentLoaded", (event) => {
+            laserIntervalId = setInterval(() => {
+                get_and_set_lasers();
+            }, 10000);
+        });
+    } else {
+        if (laserIntervalId) {
+            clearInterval(laserIntervalId);
+        }
+    }
+
+    function get_and_set_lasers() {
+        if ('{{code}}') {
+            fetch('http://localhost:8001/get_and_set_lasers/' + '{{code}}')
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+
+
     let debugMode = false;
     let infoMode = false;
     let updateIntervalId = null;
@@ -293,51 +324,45 @@
             return;
         }
 
-        const TEST_HOST = 'http://localhost:8000'
-        const PROD_HOST = 'https://virtual-graffiti-box.onrender.com'
-        const isDeployed = {{ is_deployed|yesno:"true,false" }};
-        const HOST = isDeployed ? PROD_HOST : TEST_HOST
-
         const code_validation_url = HOST + '/api/v1/validate_code/' + codeInputValue.toString()
-        fetch(code_validation_url , {
+        fetch(code_validation_url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             },
         })
         .then(response => {
-            const storeCodeUrl = '/store_code/';
-            const requestData = {
-                code: codeInputValue
-            };
+            if (response.status == 200) {
+                const storeCodeUrl = '/store_code/';
+                const requestData = {
+                    code: codeInputValue
+                };
 
-            fetch(storeCodeUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            })
-            .then(response_t => {
-                if (response_t.ok && response.ok) {
-                    showNotification('Online mode enabled.', bgColor='bg-green-500');
-                    setTimeout(function() {
-                        window.location.href = "/admin_panel/";
-                    }, 2500)
-                } else {
-                    showNotification('Invalid code.');
-                }
-            })
-            .catch(error => {
-                showNotification('Failed to store code.');
-                console.error('Error:', error);
-            });
+                return fetch(storeCodeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+            } else {
+                showNotification('Invalid code.');
+                throw new Error('Invalid code');
+            }
         })
-        .then(data => {
-            console.log(data);
+        .then(response => {
+            if (response.ok) {
+                showNotification('Online mode enabled.', bgColor='bg-green-500');
+                setTimeout(function() {
+                    window.location.href = "/admin_panel/";
+                }, 2500);
+            } else {
+                showNotification('Invalid code.');
+                throw new Error('Invalid response');
+            }
         })
         .catch(error => {
-            showNotification(error.message)
+            showNotification('Invalid code.');
             console.error('Error:', error);
         });
     });
