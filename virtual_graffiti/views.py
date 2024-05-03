@@ -57,7 +57,15 @@ def get_and_set_lasers(request, code):
             laser.save()
         return HttpResponse(status=200)
     return HttpResponse(status=404)
-    
+
+def get_lasers(request):
+    if request.method == 'GET':
+        lasers = Laser.objects.all()
+        laser_data = {}
+        for laser in lasers:
+            laser_data[laser.id] = [laser.color, int(laser.size)]
+
+        return JsonResponse(laser_data)
     
 #UC01, FR4
 @login_required(login_url='login')
