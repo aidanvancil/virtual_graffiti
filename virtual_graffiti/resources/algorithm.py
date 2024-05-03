@@ -21,7 +21,6 @@ def import_laser_model():
     except ImportError:
         return None
 
-shared_curr_laser = None
 Laser = import_laser_model()
 
 def inject_custom_imports():
@@ -40,6 +39,7 @@ def inject_custom_imports():
         "helpers.computing.count_filled_pixels",
         "helpers.computing.smooth_drawing",
         "helpers.computing.skew_point"
+        ""
     ]
     for import_str in import_list:
         module_name, obj_name = import_str.rsplit(".", 1)
