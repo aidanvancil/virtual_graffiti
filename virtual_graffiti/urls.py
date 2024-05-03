@@ -48,6 +48,6 @@ urlpatterns = [
     path('get_and_set_lasers/<int:code>', views.get_and_set_lasers, name='get_and_set_lasers'),
     path('pull/<str:mode>', admin_views.pull, name='pull'),
     path('submit_image/', admin_views.submit_image, name='submit_image'),
-    path('_init/', admin_views.init, name='_init'),
+    path('_init/<str:connected>', admin_views.init, name='_init'),
     re_path(r'^.*/$', views.errors, name='errors'),
 ]
