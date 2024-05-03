@@ -9,7 +9,20 @@ import json
 import time
 from datetime import datetime, timedelta
 import socket
+import sys
+import importlib
 import threading
+
+def import_laser_model():
+    try:
+        module = importlib.import_module("app.models")
+        laserModel = getattr(module, "Laser")
+        return laserModel
+    except ImportError:
+        return None
+
+shared_curr_laser = None
+Laser = import_laser_model()
 
 def inject_custom_imports():
     import_list = [
@@ -63,13 +76,12 @@ def handle_client_connection(conn, image_queue, command_queue):
 #     except UserProfile.DoesNotExist:
 #         return False
 
+
 #FR1, UC10
-def init():
+def init(mode_status='offline'):
     inject_custom_imports() # due to popen subprocess opening new area.
     skewed = False
     matrix = None
-
-    mode_status = 'offline' #change eventually
     mode = 'free'
     image_queue = Queue()
     command_queue = Queue()
@@ -124,9 +136,9 @@ def init():
 
     palette_positions = [[(0, (50 * y)), (50, (50 * y)), (0, (50 * y) + 56), (50, (50 * y) + 56)] for y in range (1, 14) if y % 2 == 0]
     palette_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
-    current_color_red = (0, 0, 255)  # Default red laser color
-    current_color_green = (0, 255, 0)  # Default green laser color
-    current_color_purple = (255, 0, 255)
+    current_color_red, current_size_red = (0, 0, 255), 2
+    current_color_green, current_size_green = (0, 255, 0), 2
+    current_color_purple, current_size_purple = (255, 0, 255), 2
 
     #UC03
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
@@ -181,6 +193,17 @@ def init():
 
             hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+            if mode_status == 'online' and frame_cnt % 300 == 0:
+                green = Laser.objects.filter(id='Green')
+                red = Laser.objects.filter(id='Red')
+                purple = Laser.objects.filter(id='Purple')
+                if green:
+                    current_color_green, current_size_green = green.color, green.size
+                if red:
+                    current_color_red, current_size_red = red.color, red.size
+                if purple:
+                    current_color_purple, current_size_purple = purple.color, purple.size
+    
             if skewed:
                 for color_index, color in enumerate(['red', 'green', 'purple']):
                     mask = None
@@ -233,11 +256,11 @@ def init():
                                         break
                         color = current_color_red if color_index == 0 else current_color_green if color_index == 1 else current_color_purple
                         if color_index == 0:
-                            last_point_red = smooth_drawing(last_point_red, current_point, canvas, color)
+                            last_point_red = smooth_drawing(last_point_red, current_point, canvas, color, current_size_red)
                         elif color_index == 1:
-                            last_point_green = smooth_drawing(last_point_green, current_point, canvas, color)
+                            last_point_green = smooth_drawing(last_point_green, current_point, canvas, color, current_size_green)
                         else:
-                            last_point_purple = smooth_drawing(last_point_purple, current_point, canvas, color)
+                            last_point_purple = smooth_drawing(last_point_purple, current_point, canvas, color, current_size_purple)
 
 
             if mode == 'party':
@@ -306,4 +329,5 @@ def init():
     cap.release()
         
 if __name__ == "__main__":
-    init()
+    mode_status = sys.argv[1]
+    init(mode_status)

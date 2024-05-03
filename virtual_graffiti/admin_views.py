@@ -58,7 +58,7 @@ def submit_image(request):
         print(request)
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
     
-def init(request):
+def init(request, connected):
     if request.method == 'GET':    
         if not request.session.get('init', False):
             request.session['init'] = True
@@ -70,7 +70,8 @@ def init(request):
             except Exception as e:
                 print(e)
                 pass
-        Popen(["python", "virtual_graffiti/resources/algorithm.py"])
+        mode = 'online' if connected else 'offline'
+        Popen(["python", "virtual_graffiti/resources/algorithm.py", mode])
     return redirect('admin_panel')
 
 def pull(request, mode):
