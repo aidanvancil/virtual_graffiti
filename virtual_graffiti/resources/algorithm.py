@@ -102,14 +102,12 @@ def init():
     last_point_green = None
     last_point_purple = None
     
-    cv2.namedWindow(canvas_window_name, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(canvas_window_name, cv2.WND_PROP_FULLSCREEN + cv2.WINDOW_GUI_NORMAL)
+    cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     monitors = get_monitors()
     if len(monitors) > 1:
         external_monitor = monitors[1]
-        cv2.moveWindow(canvas_window_name, external_monitor.x, external_monitor.y)
-
-    
-    cv2.setWindowProperty(canvas_window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.moveWindow(canvas_window_name, external_monitor.x, external_monitor.y)    
 
     frame_cnt = 0
     FILL_THRESHOLD_PERCENT = .4
@@ -124,7 +122,7 @@ def init():
     clear_area_rect = [(20, 20), (90, 20), 
                        (20, 55), (90, 55)]
 
-    palette_positions = [[(1250, (40 * y) - 65), (1300, (40 * y) - 65), (1250, (40 * y) - 15), (1300, (40 * y) - 15)] for y in range (1, 14) if y % 2 == 0]
+    palette_positions = [[(0, (50 * y)), (50, (50 * y)), (0, (50 * y) + 56), (50, (50 * y) + 56)] for y in range (1, 14) if y % 2 == 0]
     palette_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
     current_color_red = (0, 0, 255)  # Default red laser color
     current_color_green = (0, 255, 0)  # Default green laser color
@@ -156,7 +154,7 @@ def init():
                 clear_area_rect = [(x + points[0][0], y+points[0][1]) for (x, y) in clear_area_rect]
                 skewed_clear_area_rect = get_clear_button(matrix, clear_area_rect)
                 for palette_pos, palette_color in zip(palette_positions, palette_colors):
-                    palette_pos = [(x + points[0][0], y+points[0][1]) for (x, y) in palette_pos]
+                    palette_pos = [(x + points[1][0] - ((points[1][0] - points[1][1]) * .1), y+points[1][1]) for (x, y) in palette_pos]
                     skewed_palette_pos.append(get_color_palette(matrix, palette_pos))
 
                 
@@ -247,7 +245,7 @@ def init():
 
                 timer_text = f"Time: {remaining_time}"
                 text_size = cv2.getTextSize(timer_text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
-                timer_position = (canvas_width - text_size[0] - 50, canvas_height - 30)
+                timer_position = (canvas_width - text_size[0] - 50, canvas_height)
                 cv2.rectangle(canvas, (timer_position[0] - 20, canvas_height - text_size[1] - 60), (canvas_width, canvas_height), (0, 0, 0), -1)
                 cv2.putText(canvas, timer_text, timer_position, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
 
@@ -258,7 +256,7 @@ def init():
                     party_mode_end_time = None
 
             if skewed:
-                if mode_status == 'offline' and mode == 'free':
+                if mode_status == 'offline' and (mode == 'free' or  mode == 'party'):
                     for skewed_palette_p, palette_color in zip(skewed_palette_pos, palette_colors):
                         draw_palette_box(canvas, skewed_palette_p, palette_color)
                         

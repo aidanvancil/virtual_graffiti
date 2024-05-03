@@ -5,7 +5,7 @@ from django.http import StreamingHttpResponse, JsonResponse
 from django.views.decorators import gzip
 from django.conf import settings as _settings
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponseRedirect, HttpResponseNotFound
+from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from app.models import UserProfile, Laser
 from django.urls import reverse
 from screeninfo import get_monitors
@@ -35,43 +35,6 @@ import numpy as np
 
 HOST = "https://virtual-graffiti-box.onrender.com" if _settings.IS_DEPLOYED else "http://localhost:8000"
 
-def get_laser(request, laser_id):
-    if request.method == 'GET':
-        try:
-            laser = Laser.objects.get(id=laser_id)
-        except Laser.DoesNotExist:
-            return errors(request, error_code=302)
-
-        print(laser)
-        return JsonResponse({
-            'color': laser.color,
-            'size': laser.size,
-            'style': laser.style
-        })
-        
-    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
-
-def set_laser_color(request, laser_id):
-    data = json.loads(request.body)
-    laser = Laser.objects.get(id=laser_id)
-    laser.color = data['data']
-    laser.save()
-    return JsonResponse({'success': True}, status=200)
-
-def set_laser_size(request, laser_id):
-    data = json.loads(request.body)
-    laser = Laser.objects.get(id=laser_id)
-    laser.size = data['data']
-    laser.save()
-    return JsonResponse({'success': True}, status=200)
-
-def set_laser_style(request, laser_id):
-    data = json.loads(request.body)
-    laser = Laser.objects.get(id=laser_id)
-    laser.style = data['data']
-    laser.save()
-    return JsonResponse({'success': True}, status=200)
-
 @login_required(login_url='login')
 def remove_user_and_release_laser(request, first_name, last_name):
     users_to_del = UserProfile.objects.filter(first_name=first_name, last_name=last_name)    
@@ -81,6 +44,21 @@ def remove_user_and_release_laser(request, first_name, last_name):
     
     return redirect(admin_panel)
 
+@login_required(login_url='login')
+def get_and_set_lasers(request, code):
+    if request.method == 'GET':
+        lasers = Laser.objects.all()
+        for laser in lasers:
+            laser_id = laser.id
+            response = requests.get(f'{HOST}/get_laser/{laser_id}/{code}/') 
+            data = response.json()
+            laser.color = data['color']
+            laser.size = data['size']
+            laser.save()
+        return HttpResponse(status=200)
+    return HttpResponse(status=404)
+    
+    
 #UC01, FR4
 @login_required(login_url='login')
 def signup(request):
@@ -89,7 +67,7 @@ def signup(request):
         last_name = request.POST.get('lastname')
         laser_pointer = request.POST.get('laser')
         laser = Laser.objects.get(id=laser_pointer)
-        code = request.session.get('code', None)
+        code = request.session.get('code', False)
         UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
         
         if code:
@@ -102,9 +80,9 @@ def signup(request):
                 if redirect_url:
                     print("Settings URL:", redirect_url)
                 else:
-                    print("Error: Failed to get the settings URL")
+                    print("(1) Error: Failed to get the settings URL")
             else:
-                print("Error:", response.status_code)
+                print("(2) Error:", response.status_code)
 
             if redirect_url:
                 qr = qrcode.QRCode(
@@ -130,8 +108,6 @@ def signup(request):
                 }
                 return render(request, 'signup.html', context)
         else:
-            laser = Laser.objects.get(id=laser_pointer)
-            UserProfile.objects.create(first_name=first_name, last_name=last_name, laser=laser)
             base64_user_identifier = base64.b64encode(f"{first_name}_{last_name}_{laser_pointer}".encode('utf-8')).decode('utf-8')
             redirect_url = f"{HOST}/settings/{base64_user_identifier}"
             qr = qrcode.QRCode(
@@ -205,7 +181,8 @@ def store_code(request):
         code = data.get('code')
         request.session['code'] = code
         request.session.modified = True
-    return redirect('admin_panel')
+        return HttpResponse(status=200)
+    return HttpResponse(status=500)
 
 @login_required(login_url='login')
 def del_code(request):
@@ -216,7 +193,7 @@ def del_code(request):
 
 @login_required(login_url='login')
 def admin_panel(request):
-    code = request.session.get('code', None)
+    code = request.session.get('code', False)
     connected = False
     if code:
         code_validation_url = f"{HOST}/api/v1/validate_code/{code}"
@@ -247,7 +224,8 @@ def admin_panel(request):
         'mem_usage': 60,
         'video_frames': 60,
         'connected': connected,
-        'is_deployed': _settings.IS_DEPLOYED
+        'is_deployed': _settings.IS_DEPLOYED,
+        'code': code
     } 
     
     IMAGE_DIR = str(_settings.BASE_DIR) + '/app/static/media'
