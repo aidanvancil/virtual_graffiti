@@ -14,6 +14,15 @@ import threading
 import requests
 
 def inject_custom_imports():
+    """
+    Dynamically imports helper functions required for the main script.
+
+    This function imports helper functions specified in the `import_list` and makes them available globally.
+
+    Note:
+        This function should be called before accessing any helper functions.
+
+    """
     import_list = [
         "helpers.calibration.find_color_ranges",
         "helpers.calibration.select_four_corners",
@@ -37,6 +46,17 @@ def inject_custom_imports():
         globals()[obj_name] = getattr(module, obj_name)
 
 def handle_client_connection(conn, image_queue, command_queue):
+    """
+    Handles communication with a client.
+
+    This function listens for incoming data from a client connection and processes commands accordingly.
+
+    Parameters:
+        conn (socket.socket): The client connection socket.
+        image_queue (Queue): A queue for receiving image data from the client.
+        command_queue (Queue): A queue for receiving commands from the client.
+
+    """
     while True:
         data = conn.recv(1024).decode()
         if not data:
@@ -67,12 +87,30 @@ def handle_client_connection(conn, image_queue, command_queue):
 #         return False
 
 def hex_to_bgr(hex_color):
+    """
+    Converts a hexadecimal color code to BGR format.
+
+    Parameters:
+        hex_color (str): A hexadecimal color code (e.g., "#RRGGBB").
+
+    Returns:
+        tuple: A tuple containing the BGR color values.
+    """
     rgb_color = np.array([int(hex_color[i:i+2], 16) for i in (1, 3, 5)])
     bgr_color = (rgb_color[2], rgb_color[1], rgb_color[0])
     return bgr_color
 
 #FR1, UC10
 def init(mode_status='offline'):
+    """
+    Initializes the main script.
+
+    This function sets up communication with clients, initializes camera and display settings,
+    and manages the main processing loop.
+
+    Parameters:
+        mode_status (str, optional): The status of the mode (offline/online). Defaults to 'offline'.
+    """
     inject_custom_imports() # due to popen subprocess opening new area.
     skewed = False
     matrix = None

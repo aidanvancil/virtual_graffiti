@@ -19,6 +19,16 @@ from . import views
 
 #UC06
 def settings(request, user_identifier):
+    """
+    Render the settings page for a user identified by a base64-encoded string.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+        user_identifier (str): The base64-encoded string containing user information.
+
+    Returns:
+        HttpResponse: The HTTP response containing the rendered settings page.
+    """
     try:
         user_identifier_decoded = base64.b64decode(user_identifier).decode('utf-8')
         first_name, last_name, laser_pointer_id = user_identifier_decoded.split('_')

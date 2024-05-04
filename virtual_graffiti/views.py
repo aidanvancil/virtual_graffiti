@@ -37,6 +37,17 @@ HOST = "https://virtual-graffiti-box.onrender.com" if _settings.IS_DEPLOYED else
 
 @login_required(login_url='login')
 def remove_user_and_release_laser(request, first_name, last_name):
+    """
+    Removes a user and releases the associated laser pointer.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+        first_name (str): The first name of the user to be removed.
+        last_name (str): The last name of the user to be removed.
+
+    Returns:
+        HttpResponseRedirect: Redirects to the admin panel page.
+    """
     users_to_del = UserProfile.objects.filter(first_name=first_name, last_name=last_name)    
     if users_to_del.exists():
         user_to_del = users_to_del.first()
@@ -46,6 +57,16 @@ def remove_user_and_release_laser(request, first_name, last_name):
 
 @login_required(login_url='login')
 def get_and_set_lasers(request, code):
+    """
+    Retrieves laser data from the server and updates the local database.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+        code (str): The code associated with the laser.
+
+    Returns:
+        HttpResponse: HTTP response indicating success or failure.
+    """
     if request.method == 'GET':
         lasers = Laser.objects.all()
         for laser in lasers:
@@ -59,6 +80,15 @@ def get_and_set_lasers(request, code):
     return HttpResponse(status=404)
 
 def get_lasers(request):
+    """
+    Retrieves laser data from the local database and returns it as a JSON response.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: JSON response containing laser data.
+    """
     if request.method == 'GET':
         lasers = Laser.objects.all()
         laser_data = {}
@@ -70,6 +100,15 @@ def get_lasers(request):
 #UC01, FR4
 @login_required(login_url='login')
 def signup(request):
+    """
+    Handles user signup process.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: HTTP response containing rendered HTML content.
+    """
     if request.method == 'POST':
         first_name = request.POST.get('firstname')
         last_name = request.POST.get('lastname')
@@ -150,6 +189,15 @@ def signup(request):
 
 
 def login(request):
+    """
+    Handles user login process.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: HTTP response containing rendered HTML content.
+    """
     if request.user.is_authenticated:
         return redirect('admin_panel')
     
@@ -178,12 +226,30 @@ def login(request):
 
 @login_required(login_url='login')
 def logout(request):
+    """
+    Handles user logout process.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponseRedirect: Redirects to the login page.
+    """
     auth_logout(request)
     return redirect('login')
 
 @csrf_exempt
 @login_required(login_url='login')
 def store_code(request):
+    """
+    Stores a code in the session.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: HTTP response indicating success or failure.
+    """
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         code = data.get('code')
@@ -194,6 +260,15 @@ def store_code(request):
 
 @login_required(login_url='login')
 def del_code(request):
+    """
+    Deletes a code from the session.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponseRedirect: Redirects to the admin panel page.
+    """
     if request.method == 'GET':
         del request.session['code']
         request.session.modified = True
@@ -201,6 +276,15 @@ def del_code(request):
 
 @login_required(login_url='login')
 def admin_panel(request):
+    """
+    Renders the admin panel page.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: HTTP response containing rendered HTML content.
+    """
     code = request.session.get('code', False)
     connected = False
     if code:
@@ -246,6 +330,16 @@ def admin_panel(request):
 
 
 def errors(request, error_code=404):
+    """
+    Renders the error page.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+        error_code (int): The HTTP error code.
+
+    Returns:
+        HttpResponse: HTTP response containing rendered HTML content.
+    """
     context = {
         'error_code': error_code
     }
@@ -256,6 +350,15 @@ def errors(request, error_code=404):
 
 @csrf_exempt
 def check_reset_signal(request):
+    """
+    Checks the reset signal status.
+
+    Parameters:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: JSON response containing the reset signal status.
+    """
     try:
         absolute_path = os.path.abspath('virtual_graffiti/temp/reset_signal.txt')
         with open(absolute_path, 'r') as f:
