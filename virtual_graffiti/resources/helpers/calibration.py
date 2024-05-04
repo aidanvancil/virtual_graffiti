@@ -4,6 +4,12 @@ import os
 import json
 
 def enumerate_cameras():
+    """
+    Enumerate the available camera indices.
+
+    Returns:
+        list: List of available camera indices.
+    """
     index = 0
     arr = []
     while True:
@@ -16,9 +22,24 @@ def enumerate_cameras():
     return arr
     
 def on_trackbar(val):
+    """
+    Placeholder function for trackbar callback.
+
+    Parameters:
+        val: Trackbar value.
+
+    Returns:
+        None
+    """
     pass
 
 def find_color_ranges():
+    """
+    Find HSV color ranges for red, green, and purple lasers.
+
+    Returns:
+        tuple: Lower and upper HSV ranges for red, green, and purple lasers.
+    """
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
     colors = {}
@@ -90,6 +111,15 @@ def find_color_ranges():
     return colors['red'][0], colors['red'][1], colors['green'][0], colors['green'][1], colors['purple'][0], colors['purple'][1]
 
 def select_four_corners(image):    
+    """
+    Select four corners of an image.
+
+    Parameters:
+        image (numpy.ndarray): The image.
+
+    Returns:
+        list: List of four (x, y) coordinates representing the corners.
+    """
     instructions = ['select top-right corner', 'select bottom-right corner', 'select bottom-left corner']
 
     minified_image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
@@ -118,6 +148,17 @@ def select_four_corners(image):
     return points
 
 def get_skew_matrix(points, output_width, output_height):
+    """
+    Calculate the skew matrix for perspective transformation.
+
+    Parameters:
+        points (list): List of four (x, y) coordinates representing the corners.
+        output_width (int): Width of the output image.
+        output_height (int): Height of the output image.
+
+    Returns:
+        numpy.ndarray: Skew matrix for perspective transformation.
+    """
     pts_src = np.array(points, dtype=np.float32)    
     pts_dst = np.array([[0, 0], [output_width - 1, 0], [output_width - 1, output_height - 1], [0, output_height - 1]], dtype=np.float32)
     matrix = cv2.getPerspectiveTransform(pts_src, pts_dst)

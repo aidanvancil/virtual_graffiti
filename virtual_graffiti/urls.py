@@ -46,6 +46,7 @@ urlpatterns = [
     path('store_code/', views.store_code, name='store_code'),
     path('del_code/', views.del_code, name='del_code'),
     path('get_and_set_lasers/<int:code>', views.get_and_set_lasers, name='get_and_set_lasers'),
+    path('get_lasers/', views.get_lasers, name='get_lasers'),
     path('pull/<str:mode>', admin_views.pull, name='pull'),
     path('submit_image/', admin_views.submit_image, name='submit_image'),
     path('_init/<str:connected>', admin_views.init, name='_init'),
