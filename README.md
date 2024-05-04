@@ -64,4 +64,4 @@ Before you begin, ensure you have the following installed:
 ![registration](https://github.com/aidanvancil/virtual_graffiti/assets/42700427/eac12238-9b77-4327-b4db-f6a9b384f1d4)
 
 ## Future Changes
-   Our team felt that with the limitations of OpenCV as a drawing application that the next most logical step would be to use a graphics rendering library for our drawing. The choice was made to use OpenGL, and progress was made in creating antialiased lines that are drawn with triangles for better varying degrees of widths for line sizes. Progress can be found [here](/virtual_graffiti/open_gl/) .
+   Our team felt that with the limitations of OpenCV as a drawing application that the next most logical step would be to use a graphics rendering library for our drawing. The choice was made to use OpenGL, and progress was made in creating antialiased lines that are drawn with triangles for better varying degrees of widths for line sizes. Progress can be found [here](/open_gl/).
